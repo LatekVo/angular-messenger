@@ -1,1 +1,20 @@
-/* You can add global styles to this file, and also import other style files */
+/*
+ Material API used: https://material.angular.io/
+*/
+
+/* basic material classes */
+:root {
+  --basecolor-light: #787878;
+  --basecolor: #646464;
+  --basecolor-dark: #505050;
+  --basecolor-accent: #FFBD5E;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+
+  overflow: hidden;
+
+  background-color: var(--basecolor);
+}

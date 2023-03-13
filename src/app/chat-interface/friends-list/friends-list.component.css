@@ -1,0 +1,15 @@
+:host {
+  padding: 10px;
+}
+
+#friend-search {
+
+  width: 80%;
+  height: 3%;
+
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+
+  text-align: center;
+}

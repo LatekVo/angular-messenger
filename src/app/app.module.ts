@@ -22,9 +22,8 @@ const routes: Routes = [
   imports: [
     BrowserModule,
     RouterModule.forRoot(routes),
-    ChatInterfaceModule,
   ],
   providers: [],
-  bootstrap: [AppComponent, SignInComponent]
+  bootstrap: [AppComponent]
 })
 export class AppModule { }

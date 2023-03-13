@@ -1,1 +1,12 @@
-<p>friends-list works!</p>
+
+<input id="friend-search" type="text" placeholder="Browse friends">
+
+<ul id="friend-list">
+  <!-- The list items will be added here -->
+
+  <li *ngFor="let friend of friendList">
+    <img [src]="friend.pfpSourceUrl" alt="Profile picture of {{ friend.firstName }}">
+    <span>{{ friend.firstName }}</span>
+  </li>
+
+</ul>

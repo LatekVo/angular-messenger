@@ -1,0 +1,33 @@
+:host {
+  display: grid;
+
+  grid-template-areas:
+    'left center center right';
+
+  gap: 10px;
+  padding: 10px;
+
+  box-sizing: border-box;
+  height: 100vh;
+  width: 100vw;
+}
+
+app-friends-list, app-info-tab, app-text-area {
+  margin: 0;
+  overflow: hidden;
+  display: inline-block;
+
+  background-color: tomato;
+}
+
+app-friends-list {
+  grid-area: left;
+}
+
+app-text-area {
+  grid-area: center;
+}
+
+app-info-tab {
+  grid-area: right;
+}
