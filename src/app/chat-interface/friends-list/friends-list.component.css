@@ -4,12 +4,49 @@
 
 #friend-search {
 
-  width: 80%;
-  height: 3%;
+  width: 85%;
+  height: 3vh;
+
+  margin-top: 10px;
 
   position: relative;
   left: 50%;
   transform: translateX(-50%);
 
   text-align: center;
+}
+
+#friend-list {
+  list-style: none;
+  width: 90%;
+  padding: 20px;
+
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+
+  overflow: scroll;
+}
+
+.friend-panel {
+  display: flex;
+  height: 8vh;
+
+
+  margin-top: 10px;
+
+  background-color: #505050; /* temporary */
+}
+
+.friend-panel > span {
+  height: 100%;
+
+  padding-left: 10px;
+  display: flex;
+  align-items: center;
+
+  font-size: 1vw;
+  font-family: monospace;
+
+  overflow: hidden;
 }
