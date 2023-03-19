@@ -1,7 +1,15 @@
-<div id="conversation-box">
-  <!-- sample conversations to later turn into js -->
-</div>
-<div>
+<ul id="conversation-box">
+  <!-- simply draw all the conversations in a list, their class will dictate their styles -->
+  <li *ngFor="let message of messageList" [ngClass]="{'ownMessage': message.writtenByMe, 'message-pack': true}">
+    <!-- todo to enable image sending, either convert all links to embeds, or add some optional img tag -->
+    <div id="sender-name">{{message.senderName}}</div>
+    <div id="sender-content">{{message.content}}</div>
+  </li>
+</ul>
+
+<div id="input-box">
   <input id="message-input">
-  <button id="message-send"></button>
+  <button id="message-send">
+    <img src="" alt="Send">
+  </button>
 </div>

@@ -38,9 +38,6 @@ export class FriendsListComponent implements OnInit {
 
   // we are using the ngModel to bind the input box to this var
   searchInput: string = "";
-  onSearchBoxChange() {
-
-  }
 }
 
 // search box custom filter

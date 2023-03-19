@@ -35,7 +35,8 @@
 
   margin-top: 10px;
 
-  background-color: #505050; /* temporary */
+  background-color: var(--basecolor-dark);
+  color: white;
 }
 
 .friend-panel > span {

@@ -17,7 +17,9 @@ app-friends-list, app-info-tab, app-text-area {
   overflow: hidden;
   display: inline-block;
 
-  background-color: tomato;
+  position: relative; /* sets all of these as anchors for position: absolute */
+
+  background-color: var(--basecolor-light);
 }
 
 app-friends-list {
