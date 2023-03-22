@@ -1,1 +1,86 @@
-<p>sign-in works!</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title id="title">Register | Web-chess</title>
+</head>
+<body>
+<div class="background">
+  <div class="register-background"></div>
+  <div class="bar"></div>
+  <div class="bar"></div>
+
+
+  <!-- Overlaying elements -->
+  <div class="register-box">
+    <div class="register-header">
+      <b>Register</b>
+    </div>
+
+    <!-- LOGIN based on the showLoginForm -->
+    <div *ngIf="showLoginForm">
+      <form method="POST" [formGroup]="registerForm" (ngSubmit)="submitRegisterForm()">
+        <div class="register-field">
+          <label><b>Username</b></label>
+          <input type="text" name="username" formControlName="username" required>
+        </div>
+
+        <div class="register-field">
+          <label><b>Password</b></label>
+          <input type="password" name="password" formControlName="password" required>
+        </div>
+
+        <div class="register-field">
+          <button class="login-button login-register" type="submit">
+            {{ showLoginForm ? 'Login' : 'Register' }}
+          </button>
+
+          <button class="switchForm" (click)="showLoginForm = !showLoginForm">
+            {{ showLoginForm ? 'Create an account' : 'I already have an account' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- REGISTER -->
+    <div *ngIf="!showLoginForm">
+      <form method="POST" [formGroup]="registerForm" (ngSubmit)="submitRegisterForm()">
+
+        <div class="register-field">
+          <label><b>Email</b></label>
+          <input type="email" name="email" formControlName="email" required>
+        </div>
+
+        <div class="register-field">
+          <label><b>Username</b></label>
+          <input type="text" name="username" formControlName="username" required>
+        </div>
+
+        <div class="register-field">
+          <label><b>Password</b></label>
+          <input type="password" name="password" formControlName="password" required>
+        </div>
+
+        <div class="register-field">
+          <label><b>Repeat password</b></label>
+          <input type="password" name="passwordRepeat" formControlName="passwordRepeat" required>
+        </div>
+
+        <div class="register-field">
+          <button class="login-button login-register" type="submit">
+            {{ showLoginForm ? 'Login' : 'Register' }}
+          </button>
+
+          <button class="switchForm" (click)="showLoginForm = !showLoginForm">
+            {{ showLoginForm ? 'Create an account' : 'I already have an account' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

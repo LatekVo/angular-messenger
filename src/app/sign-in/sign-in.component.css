@@ -1,0 +1,128 @@
+
+div.register-background {
+  position: absolute;
+
+  width: 80vw;
+  height: 100vh;
+
+  top: 0;
+  left: 50vw;
+  transform: translateX(-50%);
+
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--basecolor-dark),
+    var(--basecolor-dark) 30px,
+    var(--basecolor-light) 30px,
+    var(--basecolor-light) 60px
+  );
+  /* example of a gradient to try out
+      background: repeating-linear-gradient(
+          -45deg,
+          #9ea9ef,
+          #606dbc 20px,
+          #414551 20px,
+          #465298 40px
+  );
+   */
+}
+div.bar {
+  position: absolute;
+
+  width: 4vw;
+  height: 100%;
+
+  top: 0;
+  left: 10vw;
+  transform: translateX(-50%);
+
+  background-color: var(--basecolor-accent);
+}
+div.bar:nth-child(2) {
+  left: 90vw;
+}
+
+div.register-box {
+
+  position: absolute;
+  left: 50vw;
+  top: 50vh;
+  transform: translate(-50%, -50%);
+
+  width: 40vw;
+
+  background-color: var(--basecolor-accent);
+  color: ghostwhite;
+
+  box-shadow: 5px 5px var(--basecolor-accent-shadow);
+}
+
+div.register-header {
+  display: flex;
+
+  height: 5vh;
+  width: 100%;
+
+  align-items: center;
+  text-align: left;
+  text-indent: 1vw;
+
+  font-size: larger;
+  font-family: "Montserrat", sans-serif;
+}
+
+div.register-field {
+  position: relative; /* set as anchors */
+
+  display: table;
+
+  margin: 2vh 1vw 2vh 3vh;
+  width: 55%;
+
+}
+
+input[type="text"], input[type="password"], input[type="email"] {
+  display: block;
+  width: 100%;
+
+
+  padding: 4px 10px;
+  margin: 8px 0;
+
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+
+  font-size: smaller;
+
+  box-shadow: 5px 5px var(--basecolor-accent-shadow);
+}
+
+button {
+  cursor: pointer;
+  border-radius: 0;
+  border: none;
+}
+
+button.login-register {
+  margin-left: 1%;
+
+  padding: 5px 10px 5px 10px;
+  height: 100%;
+  font-size: 16px;
+
+  box-shadow: 3px 3px var(--basecolor-accent-shadow);
+}
+
+.switchForm {
+  border: none;
+  background-color: transparent;
+  color: var(--basecolor-light);
+  text-decoration: underline;
+
+  position: absolute;
+  right: 0;
+
+  padding: 5px;
+  height: 100%;
+  font-size: 15px;
+}

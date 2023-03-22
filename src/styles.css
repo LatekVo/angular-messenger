@@ -7,7 +7,8 @@
   --basecolor-light: #787878;
   --basecolor: #646464;
   --basecolor-dark: #5e5e5e;
-  --basecolor-accent: #FFBD5E;
+  --basecolor-accent: #ffb45d;
+  --basecolor-accent-shadow: #d08f39;
 }
 
 body {
