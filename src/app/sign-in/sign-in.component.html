@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title id="title">Register | Web-chess</title>
+  <title id="title">{{ showLoginForm ? 'Login' : 'Register' }} to messenger</title>
 </head>
 <body>
 <div class="background">
@@ -14,12 +14,12 @@
   <!-- Overlaying elements -->
   <div class="register-box">
     <div class="register-header">
-      <b>Register</b>
+      <b>{{ showLoginForm ? 'Login' : 'Register' }}</b>
     </div>
 
     <!-- LOGIN based on the showLoginForm -->
     <div *ngIf="showLoginForm">
-      <form method="POST" [formGroup]="registerForm" (ngSubmit)="submitRegisterForm()">
+      <form method="POST" [formGroup]="loginForm" (ngSubmit)="submitLoginForm()">
         <div class="register-field">
           <label><b>Username</b></label>
           <input type="text" name="username" formControlName="username" required>
@@ -31,7 +31,7 @@
         </div>
 
         <div class="register-field">
-          <button class="login-button login-register" type="submit">
+          <button class="login-button login-register" type="submit" [disabled]="!loginForm.valid">
             {{ showLoginForm ? 'Login' : 'Register' }}
           </button>
 
@@ -68,7 +68,7 @@
         </div>
 
         <div class="register-field">
-          <button class="login-button login-register" type="submit">
+          <button class="login-button login-register" type="submit" [disabled]="!registerForm.valid">
             {{ showLoginForm ? 'Login' : 'Register' }}
           </button>
 

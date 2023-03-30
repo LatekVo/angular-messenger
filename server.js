@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const fs = require('fs');
+const apiRouter = require('./apiCalls');
 
 const port = process.env.NODE_PORT || 3000;
 
@@ -19,6 +20,8 @@ app.get('*', function(req, res) {
     }
   })
 });
+
+app.use('/api', apiRouter);
 
 app.listen(port);
 console.log('Listening on port ' + port);

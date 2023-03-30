@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
-
+import { HttpClient } from '@angular/common/http'; // used for sending the forms out
 
 @Component({
   selector: 'app-sign-in',
@@ -15,7 +15,7 @@ export class SignInComponent {
   loginForm: FormGroup;
   registerForm: FormGroup;
 
-  constructor() {
+  constructor(private http: HttpClient) {
     this.registerForm = new FormGroup({
       email: new FormControl('', [Validators.required]),
       username: new FormControl('', [Validators.required, Validators.minLength(3)]),
@@ -26,11 +26,27 @@ export class SignInComponent {
 
     this.loginForm = new FormGroup({
       username: new FormControl('', [Validators.required]),
-      password: new FormControl('', [Validators.required]),
+      password: new FormControl('', [Validators.required])
     });
   }
 
   submitRegisterForm() {
+    console.log(this.registerForm.value)
 
+    const formData = this.registerForm.value;
+    this.http.post('/api/register', formData).subscribe (
+      response => console.log('Success!', response),
+      error => console.error('Error!', error)
+    );
+  }
+
+  submitLoginForm() {
+    console.log(this.loginForm.value)
+
+    const formData = this.loginForm.value;
+    this.http.post('/api/login', formData).subscribe (
+      response => console.log('Success!', response),
+      error => console.error('Error!', error)
+    );
   }
 }
