@@ -30,7 +30,18 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT,
   password TEXT
   );
+`, (err, output) => {
+  if (err) {
+    console.log('--- SQLITE create table ERROR ---')
+    console.log(err)
+  } else {
+    console.log('--- SQLITE create table SUCCESS ---')
+    console.log(output)
+  }
+});
 
+// only one sql request can be run at a time with .run(), so i had to split up the 'tokens' creation into a separate .run()
+db.run(`
 CREATE TABLE IF NOT EXISTS tokens (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   userId INTEGER,
@@ -49,7 +60,6 @@ CREATE TABLE IF NOT EXISTS tokens (
     console.log(output)
   }
 });
-
 // every route in here to be addressed by /api/___
 router.post('/tokenLogin', (req, res) => {
   let tokenHash = req.body['token']
