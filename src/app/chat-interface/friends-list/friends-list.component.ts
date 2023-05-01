@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import {Friend} from "../../models/friend";
-import {HttpClient} from "@angular/common/http";
-import {catchError, throwError} from "rxjs";
-import { cloneDeep } from 'lodash'; // it's absurd deepCloning isn't built in
+import { PersonModel } from "../../shared/models/personModel";
+import { HttpClient } from "@angular/common/http";
+import { PersonNameOrSurnamePipe } from "../../shared/pipes/person-name-or-surname.pipe";
 
 @Component({
   selector: 'app-friends-list',
@@ -12,9 +11,9 @@ import { cloneDeep } from 'lodash'; // it's absurd deepCloning isn't built in
 })
 export class FriendsListComponent implements OnInit {
 
-  friendList: Friend[] = []
+  friendList: PersonModel[] = []
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private personNameOrSurnamePipe: PersonNameOrSurnamePipe) {}
 
   ngOnInit() {
     this.fetchFriends().subscribe((friendList) => {
@@ -32,31 +31,11 @@ export class FriendsListComponent implements OnInit {
 
   // TODO: add API for fetchFriendList
 
-  fetchFriends(): Observable<Friend[]> {
-    return this.http.get<Friend[]>('/api/fetchFriendList');
+  fetchFriends(): Observable<PersonModel[]> {
+    return this.http.get<PersonModel[]>('/api/fetchFriendList');
   }
 
   // we are using the ngModel to bind the input box to this var
   searchInput: string = "";
-}
-
-// search box custom filter
-import { Pipe, PipeTransform } from '@angular/core';
-
-@Pipe({
-  name: 'friendFilter',
-  pure: false // setting pure to false enables the pipe to re-run on every change detection cycle
-})
-export class FriendFilterPipe implements PipeTransform {
-  transform(friends: Friend[], searchText: string): Friend[] {
-    if (!friends || !searchText) {
-      return friends;
-    }
-
-    searchText = searchText.toLowerCase();
-    return friends.filter(friend =>
-      friend.firstName.toLowerCase().includes(searchText) ||
-      friend.lastName.toLowerCase().includes(searchText)
-    );
-  }
+  protected readonly PersonNameOrSurnamePipe = PersonNameOrSurnamePipe;
 }

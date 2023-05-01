@@ -4,7 +4,7 @@
 <ul id="friend-list">
   <!-- The list items will be added here -->
 
-  <li *ngFor="let friend of friendList | friendFilter: searchInput" class="friend-panel">
+  <li *ngFor="let friend of friendList | personNameOrSurname: searchInput" class="friend-panel">
     <img src="{{ friend.pfpSourceUrl }}" alt="Profile picture of {{ friend.firstName }}">
     <span>{{ friend.firstName }} {{ friend.lastName }}</span>
   </li>

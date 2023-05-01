@@ -5,7 +5,8 @@ import { HttpClient } from '@angular/common/http'; // used for sending the forms
 @Component({
   selector: 'app-sign-in',
   templateUrl: './sign-in.component.html',
-  styleUrls: ['./sign-in.component.css']
+  styleUrls: ['./sign-in.component.css'],
+
 })
 export class SignInComponent {
 
@@ -34,19 +35,19 @@ export class SignInComponent {
     console.log(this.registerForm.value)
 
     const formData = this.registerForm.value;
-    this.http.post('/api/register', formData).subscribe (
-      response => console.log('Success!', response),
-      error => console.error('Error!', error)
-    );
+    this.http.post('/api/register', formData).subscribe ({
+      next: response => console.log('Success!', response),
+      error: error => console.error('Error!', error)
+    });
   }
 
   submitLoginForm() {
     console.log(this.loginForm.value)
 
     const formData = this.loginForm.value;
-    this.http.post('/api/login', formData).subscribe (
-      response => console.log('Success!', response),
-      error => console.error('Error!', error)
-    );
+    this.http.post('/api/login', formData).subscribe ({
+      next: response => console.log('Success!', response),
+      error: error => console.error('Error!', error)
+    });
   }
 }

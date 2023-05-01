@@ -1,4 +1,4 @@
-export interface Message {
+export interface MessageModel {
   content: string;
   senderId: string; // will probably be expressed as a unique id that will later be locally mapped to username and other details
 

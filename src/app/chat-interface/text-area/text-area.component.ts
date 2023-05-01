@@ -1,8 +1,6 @@
-import {Component, OnInit} from '@angular/core';
-import {Message} from "../../models/message";
-import {Observable} from "rxjs";
-import {Friend} from "../../models/friend";
-import {HttpClient} from "@angular/common/http";
+import { Component, OnInit } from '@angular/core';
+import { MessageModel } from "../../shared/models/messageModel";
+import { HttpClient } from "@angular/common/http";
 
 // todo: move all network components to a separate 'API interaction' service
 
@@ -12,7 +10,7 @@ import {HttpClient} from "@angular/common/http";
   styleUrls: ['./text-area.component.css']
 })
 export class TextAreaComponent implements OnInit {
-  messageList: Message[] = []
+  messageList: MessageModel[] = []
 
   constructor(private http: HttpClient) {}
 
