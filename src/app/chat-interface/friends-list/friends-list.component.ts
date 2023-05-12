@@ -13,7 +13,7 @@ export class FriendsListComponent implements OnInit {
 
   friendList: PersonModel[] = []
 
-  constructor(private http: HttpClient, private personNameOrSurnamePipe: PersonNameOrSurnamePipe) {}
+  constructor(private http: HttpClient) {}
 
   ngOnInit() {
     this.fetchFriends().subscribe((friendList) => {
@@ -37,5 +37,4 @@ export class FriendsListComponent implements OnInit {
 
   // we are using the ngModel to bind the input box to this var
   searchInput: string = "";
-  protected readonly PersonNameOrSurnamePipe = PersonNameOrSurnamePipe;
 }
