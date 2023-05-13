@@ -37,65 +37,62 @@ CREATE TABLE IF NOT EXISTS authorizations (
 `, dbErrorCallback);
 
 // returns promise, so that these statements are more readable, and callback functions are be optional - replaced with .then()
-// it has to be noted, that db.run and db.get run asynchronously, detached from the main thread, and using async keyword is not an option
-// insertion query is an object with keys and values corresponding to the addressed table.
-function insertRecord(tableName: string, insertionQuery: Object): Promise<Boolean> {
-  let valuesString = "";
-  let keysString = "";
+// it has to be noted, that db.run() and db.get() run asynchronously, detached from the main thread, and using async keyword is not an option
 
-  for ([key, value] of insertionQuery.entries()) {
-    if (valuesString.length > 0) {
-       valuesString += ', ';
-       keysString += ', ';
+// avoiding using class to force a singleton and cleaner addressing from other files
+export default {
+  getRecord(tableName, fieldNames: Array<string>, condition): Promise<string> {
+    let fieldNamesString = fieldNames.reduce((acc, field) => {
+      if (acc.length > 0) {
+        acc += ', ';
+      }
+      acc += field;
+    });
+
+    return new Promise((success, error) => {
+      db.get(`SELECT ${fieldNamesString} FROM ${tableName} WHERE ${condition};`, (err, output) => {
+        if (err) {
+          error(output);
+        } else {
+          success(output);
+        }
+      });
+    });
+  },
+  // insertion query is an object with keys and values corresponding to the addressed table.
+  insertRecord(tableName: string, insertionQuery: Object): Promise<Boolean> {
+    let valuesString = "";
+    let keysString = "";
+
+    for (let [key, value] of insertionQuery.entries()) {
+      if (valuesString.length > 0) {
+        valuesString += ', ';
+        keysString += ', ';
+      }
+
+      valuesString += value;
+      keysString += key;
     }
 
-    valuesString += value;
-    keysString += key;
+    return new Promise((success, error) => {
+      db.run(`INSERT INTO ${tableName} (${keysString}) VALUES (${valuesString});`, (err, output) => {
+        if (err) {
+          error(output);
+        } else {
+          success(true);
+        }
+      });
+    });
+  },
+  deleteRecord(tableName: string, condition: string): Promise<Boolean> {
+    return new Promise((success, error) => {
+      db.run(`DELETE FROM ${tableName} WHERE ${condition};`, (err, output) => {
+        if (err) {
+          error(output);
+        } else {
+          success(true);
+        }
+      });
+    });
   }
-
-  return new Promise((success, error) => {
-    db.run(`INSERT INTO ${tableName} (${keysString}) VALUES (${valuesString});`, (err, output) => {
-      if (err) {
-        error(output);
-      } else {
-        success(true);
-      }
-    });
-  });
 }
-
-function deleteRecord(tableName: string, condition: string): Promise<Boolean> {
-  return new Promise((success, error) => {
-    db.run(`DELETE FROM ${tableName} WHERE ${condition};`, (err, output) => {
-      if (err) {
-        error(output);
-      } else {
-        success(true);
-      }
-    });
-  });
-}
-
-function getRecord(tableName, fieldNames: Array<string>, condition): Promise<string> {
-  let fieldNamesString = fieldNames.reduce((acc, field) => {
-    if (acc.length > 0) {
-      acc += ', ';
-    }
-    acc += field;
-  });
-
-  return new Promise((success, error) => {
-    db.get(`SELECT ${fieldNamesString} FROM ${tableName} WHERE ${condition};`, (err, output) => {
-      if (err) {
-        error(output);
-      } else {
-        success(output);
-      }
-    });
-  });
-}
-
-class DatabaseService {
-
-}
-
