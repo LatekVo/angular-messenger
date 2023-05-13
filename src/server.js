@@ -5,7 +5,8 @@ const fs = require('fs');
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 
-const apiRouter = require('./apiCalls');
+const databaseService = require('./src/databaseService');
+const apiRouter = require('./src/apiCalls');
 
 const port = process.env.NODE_PORT || 3000;
 

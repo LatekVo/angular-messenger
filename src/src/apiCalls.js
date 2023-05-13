@@ -19,47 +19,6 @@ function stringToDate(string) {
 function dateToString(date) {
   return date.toISOString().slice(0, 19).replace('T', ' ')
 }
-
-// db init will be moved to server.js later, but for now it's only being used here
-// datetime format: yyyy-MM-dd HH:mm:ss ie: '2007-01-01 10:00:00'
-// to get this time format in js: date.toISOString().slice(0, 19).replace('T', ' '); date being the Date() std class
-db.run(`
-CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  email TEXT,
-  username TEXT,
-  password TEXT
-  );
-`, (err, output) => {
-  if (err) {
-    console.log('--- SQLITE create table ERROR ---')
-    console.log(err)
-  } else {
-    console.log('--- SQLITE create table SUCCESS ---')
-    console.log(output)
-  }
-});
-
-// only one sql request can be run at a time with .run(), so i had to split up the 'tokens' creation into a separate .run()
-db.run(`
-CREATE TABLE IF NOT EXISTS tokens (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  userId INTEGER,
-  token TEXT,
-  expiry DATETIME,
-
-  FOREIGN KEY(userId) REFERENCES users(id)
-
-  );
-`, (err, output) => {
-  if (err) {
-    console.log('--- SQLITE create table ERROR ---')
-    console.log(err)
-  } else {
-    console.log('--- SQLITE create table SUCCESS ---')
-    console.log(output)
-  }
-});
 // every route in here to be addressed by /api/___
 router.post('/tokenLogin', (req, res) => {
   let tokenHash = req.body['token']
