@@ -1,6 +1,9 @@
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('database.sqlite');
 
+// TODO: IMPORTANT
+//  make this a typescript file, add types for all arguments
+
 const dbErrorCallback = (err, output) => {
   if (err) {
     console.log('--- SQLITE ERROR ---');
@@ -40,8 +43,8 @@ CREATE TABLE IF NOT EXISTS authorizations (
 // it has to be noted, that db.run() and db.get() run asynchronously, detached from the main thread, and using async keyword is not an option
 
 // avoiding using class to force a singleton and cleaner addressing from other files
-export default {
-  getRecord(tableName, fieldNames: Array<string>, condition): Promise<string> {
+module.exports = {
+  getRecord(tableName, fieldNames /*: Array<string>*/, condition) {
     let fieldNamesString = fieldNames.reduce((acc, field) => {
       if (acc.length > 0) {
         acc += ', ';
@@ -49,18 +52,19 @@ export default {
       acc += field;
     });
 
-    return new Promise((success, error) => {
+    return new Promise<Array<string>>((success, error) => {
       db.get(`SELECT ${fieldNamesString} FROM ${tableName} WHERE ${condition};`, (err, output) => {
         if (err) {
           error(output);
         } else {
-          success(output);
+          console.log(output);
+          success(output.split(' '));
         }
       });
     });
   },
   // insertion query is an object with keys and values corresponding to the addressed table.
-  insertRecord(tableName: string, insertionQuery: Object): Promise<Boolean> {
+  insertRecord(tableName, insertionQuery) {
     let valuesString = "";
     let keysString = "";
 
@@ -74,7 +78,7 @@ export default {
       keysString += key;
     }
 
-    return new Promise((success, error) => {
+    return new Promise<Boolean>((success, error) => {
       db.run(`INSERT INTO ${tableName} (${keysString}) VALUES (${valuesString});`, (err, output) => {
         if (err) {
           error(output);
@@ -84,8 +88,8 @@ export default {
       });
     });
   },
-  deleteRecord(tableName: string, condition: string): Promise<Boolean> {
-    return new Promise((success, error) => {
+  deleteRecord(tableName, condition) {
+    return new Promise<Boolean>((success, error) => {
       db.run(`DELETE FROM ${tableName} WHERE ${condition};`, (err, output) => {
         if (err) {
           error(output);
