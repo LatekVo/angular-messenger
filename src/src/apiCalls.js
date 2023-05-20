@@ -1,4 +1,4 @@
-const DatabaseService = require('./databaseService');
+const dbs = require('./databaseService');
 
 const express = require('express');
 const router = express.Router();
@@ -8,9 +8,6 @@ const bcrypt = require('bcrypt');
 const PAGE_URL = 'localhost:3000';
 
 let hashCost = 12; // todo: this value can be changed without harming anything, but should get tuned for ~150ms per hash comparison
-
-const AUTH_TABLE = 'authorizations';
-const USERS_TABLE = 'users';
 
 // converts SQL date string to Date object
 function stringToDate(string) {
@@ -25,7 +22,7 @@ function dateToString(date) {
 router.post('/tokenLogin', (req, res) => {
   let tokenHash = req.body['token'];
 
-  DatabaseService.getRecord(AUTH_TABLE, ['token'], `token=${tokenHash}`).then(([token]) => {
+  dbs.getRecord(dbs.AUTH_TABLE, ['token'], `token=${tokenHash}`).then(([token]) => {
     if (token?.token === undefined || token?.token !== token) {
       res.writeHead(401);
       res.send();
@@ -48,13 +45,13 @@ router.post('/login', (req, res) => {
   let username = req.body['username'],
       password = req.body['password'];
 
-  DatabaseService.getRecord(USERS_TABLE, ['password', 'id'], `username=${username}`).then(([storedPasswordHash, storedUserId]) => {
+  dbs.getRecord(dbs.USERS_TABLE, ['password', 'id'], `username=${username}`).then(([storedPasswordHash, storedUserId]) => {
 
     let isEqual = bcrypt.compareSync(password, storedPasswordHash);
 
     if (isEqual) {
       // make sure the record has been deleted, then proceed with creating the new one
-      DatabaseService.deleteRecord(AUTH_TABLE, `userId = ${storedUserId}`).then((err) => {
+      dbs.deleteRecord(dbs.AUTH_TABLE, `userId = ${storedUserId}`).then((err) => {
         if (err) {
           // this error could just be a 'not found' message, this is to be expected since we are executing the deletion without checking if the record exists.
           console.log('--- SQL INFORMATION ---');
@@ -81,7 +78,7 @@ router.post('/login', (req, res) => {
           expiry: tokenExpiryDateString
         };
 
-        DatabaseService.insertRecord(AUTH_TABLE, tokenInsertionQuery).then((err) => {
+        dbs.insertRecord(dbs.AUTH_TABLE, tokenInsertionQuery).then((err) => {
           if (err) {
             // this error could just be a 'not found' message, this is to be expected since we are executing the deletion without checking if the record exists.
             console.log('--- SQL ERROR ---');
@@ -98,7 +95,7 @@ router.post('/login', (req, res) => {
       });
     } else {
       // wrong credentials - ask to retry
-      res.writeHead(401)
+      res.writeHead(401);
       res.send();
     }
   });
@@ -118,7 +115,7 @@ router.post('/register', (req, res) => {
     password: passwordHash
   };
 
-  DatabaseService.insertRecord(USERS_TABLE, insertQuery).then(() => {
+  dbs.insertRecord(dbs.USERS_TABLE, insertQuery).then(() => {
     res.writeHead(200);
     res.send();
   });
