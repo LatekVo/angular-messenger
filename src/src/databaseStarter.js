@@ -4,9 +4,6 @@ const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'));
 
 console.log('database folder: ', __dirname)
 
-// TODO: IMPORTANT
-//  make this a typescript file, add types for all arguments
-
 const dbErrorCallback = (err, output) => {
   if (err) {
     console.log('--- SQLITE ERROR ---');
@@ -17,7 +14,8 @@ const dbErrorCallback = (err, output) => {
   }
 };
 
-// db init will be moved to server.js later, but for now it's only being used here
+// todo: when development slows down, migrate this code to SQL script, will make it simpler to transition to C#
+
 // datetime format: yyyy-MM-dd HH:mm:ss ie: '2007-01-01 10:00:00'
 // to get this time format in js: date.toISOString().slice(0, 19).replace('T', ' '); date being the Date() std class
 db.run(`
@@ -29,7 +27,6 @@ CREATE TABLE IF NOT EXISTS users (
   );
 `, dbErrorCallback);
 
-// only one sql request can be run at a time with .run(), so i had to split up the 'tokens' creation into a separate .run()
 db.run(`
 CREATE TABLE IF NOT EXISTS authorizations (
   id TEXT PRIMARY KEY,

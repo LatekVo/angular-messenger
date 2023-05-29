@@ -19,6 +19,7 @@ function dateToString(date) {
   return date.toISOString().slice(0, 19).replace('T', ' ');
 }
 // every route in here to be addressed by /api/___
+
 router.post('/tokenLogin', (req, res) => {
   let tokenHash = req.body['token'];
 
@@ -87,7 +88,8 @@ router.post('/login', (req, res) => {
             // reminder to self before I forget again - we won't be validating an already existing token, GET /tokenLogin already does that
             // send session token & home page
             res.writeHead(200);
-            res.cookie('sessionToken', tokenHash);
+            res.cookie('userToken', tokenHash);
+            res.cookie('userId', tokenUserId);
             res.send();
           }
 

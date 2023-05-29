@@ -1,7 +1,9 @@
 import {Injectable} from '@angular/core';
 import {LocalStorageKeys as lsk} from '../enums/local-storage-keys';
 import {HttpClient} from "@angular/common/http";
-import {Observable} from "rxjs";
+import {BehaviorSubject} from "rxjs";
+import {Router} from "@angular/router";
+import {CookieService} from "./cookie.service";
 
 // TODO: this should have been made in Redux, and will need to be rewritten to Redux in future
 
@@ -9,39 +11,45 @@ import {Observable} from "rxjs";
   providedIn: 'root'
 })
 export class UserContextService {
+  storedUserId = new BehaviorSubject(localStorage.getItem(lsk.USER_ID));
+  storedUserToken = new BehaviorSubject(localStorage.getItem(lsk.USER_TOKEN));
+  storedOpenedChatId = new BehaviorSubject(localStorage.getItem(lsk.OPENED_CHAT_ID));
+  storedAvailableChatIdList = new BehaviorSubject([]);
 
-  get userId() {
-    // null value will signal that current user's id is unavailable, by now, it should be known that user is not logged in so user id will have to get re-requested
-    return localStorage.getItem(lsk.USER_ID);
-  }
-
-  set userToken(newToken) {
-    if (newToken)
-      localStorage.setItem(lsk.USER_TOKEN, newToken);
-  }
-
-  get userToken() {
-    // null value will be used by app initializer to check whether logging in with a token is possible
-    return localStorage.getItem(lsk.USER_TOKEN);
-  }
-
-  get openedChatId() {
-    // null value will signal there is no open chat, display a 'no open chat' banner in the chat field instead
-    return localStorage.getItem(lsk.OPENED_CHAT_ID);
-  }
-
-  get availableChatIdList() {
-    // null value for no open chats, just keep the 'new chat' button
-    let availableChatIdListRaw = localStorage.getItem(lsk.AVAILABLE_CHAT_ID_LIST);
-
-    if (availableChatIdListRaw !== null) {
-      return JSON.parse(availableChatIdListRaw);
-    } else {
-      return null;
+  constructor(private http: HttpClient, private router: Router, private cookieService: CookieService) {
+    // in case of recent login, parse all received cookies and move the data to localStorage
+    let cookieUserToken = cookieService.getCookie(lsk.USER_TOKEN)
+    if (cookieUserToken) {
+      localStorage.setItem(lsk.USER_TOKEN, cookieUserToken);
+      this.storedUserToken.next(cookieUserToken);
+      cookieService.deleteCookie(lsk.USER_TOKEN);
     }
-  }
+    let cookieUserId = cookieService.getCookie(lsk.USER_ID)
+    if (cookieUserId) {
+      localStorage.setItem(lsk.USER_ID, cookieUserId);
+      this.storedUserToken.next(cookieUserId);
+      cookieService.deleteCookie(lsk.USER_ID);
+    }
 
-  constructor(private http: HttpClient) {
+    if (this.storedUserToken.value != null && this.storedUserId) {
+      // unverified token present
+      http.post('/api/tokenLogin', {token: this.storedUserToken.value}, {observe: "response"}).subscribe(response => {
+        if (response.status === 200) {
+          // login succeeded
+          if (router.url === '/login') {
+            router.navigate(['/', 'chat']).catch(err => console.log('navigation error: ' + err));
+          }
+        } else {
+          // token expired
+          localStorage.removeItem(lsk.USER_TOKEN);
+          localStorage.removeItem(lsk.USER_ID);
 
+          router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
+        }
+      });
+    } else {
+      // no token present
+      router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
+    }
   }
 }
