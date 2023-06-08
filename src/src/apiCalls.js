@@ -9,6 +9,12 @@ const PAGE_URL = 'localhost:3000';
 
 let hashCost = 12; // todo: this value can be changed without harming anything, but should get tuned for ~150ms per hash comparison
 
+
+// ~4.5 * 10^15 combinations
+function hashGen() {
+  return Math.random().toString(36).substring(2);
+}
+
 // converts SQL date string to Date object
 function stringToDate(string) {
   return new Date(Date.parse(string));
@@ -59,11 +65,6 @@ router.post('/login', (req, res) => {
           console.log(err);
         }
 
-        // ~4.5 * 10^15 combinations
-        let hashGen = () => {
-          return Math.random().toString(36).substring(2);
-        }
-
         let tokenHash = hashGen() + hashGen(),
           tokenUserId = storedUserId,
           tokenExpiryDate = new Date(); // unused for now, but necessary for later
@@ -109,7 +110,8 @@ router.post('/register', (req, res) => {
       password = req.body['password'];
 
   // todo: add verification etc, we don't want people spamming empty accounts
-  let passwordHash = bcrypt.hashSync(password);
+  let saltHash = bcrypt.genSaltSync(12);
+  let passwordHash = bcrypt.hashSync(password, saltHash);
 
   let insertQuery = {
     email: email,

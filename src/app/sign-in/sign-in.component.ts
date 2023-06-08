@@ -32,11 +32,13 @@ export class SignInComponent {
   }
 
   submitRegisterForm() {
-    console.log(this.registerForm.value)
-
     const formData = this.registerForm.value;
-    this.http.post('/api/register', formData).subscribe ({
-      next: response => console.log('Success!', response),
+    this.http.post('/api/register', formData, {observe: "response"}).subscribe ({
+      next: response => {
+        console.log('Successful registration!');
+
+        this.showLoginForm = true
+      },
       error: error => console.error('Error!', error)
     });
   }
@@ -46,7 +48,9 @@ export class SignInComponent {
 
     const formData = this.loginForm.value;
     this.http.post('/api/login', formData).subscribe ({
-      next: response => console.log('Success!', response),
+      next: response => {
+        console.log('Successful login!');
+      },
       error: error => console.error('Error!', error)
     });
   }

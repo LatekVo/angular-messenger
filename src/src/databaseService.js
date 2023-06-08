@@ -9,22 +9,23 @@ const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'));
 function doesIdExist(id) {
   // TODO: generate this list automatically
   let query = [
-    'authorizations',
     'users',
+    'authorizations',
     'chats',
-    'chatLinks',
     'friendLinks',
+    'chatLinks',
     'messages'
   ]
-    .map(tableName => tableName = `SELECT id FROM ${tableName} WHERE id=${id}`)
+    .map(tableName => tableName = `SELECT id FROM ${tableName} WHERE id='${id}'`)
     .join('\nUNION\n'); // 'union' joins all sql outputs into a single output
+  query += ';';
 
-  return new Promise<boolean>((success, error) => {
+  return new Promise((success, error) => {
     db.get(query, (err, output) => {
       if (err) {
-        error(output);
+        error(err);
       } else {
-        if (output.length > 0) {
+        if (output) {
           console.log('tried adding duplicate ID: ' + output); // this should be so incredibly rare that it's more likely there is an error than an actually duplicate ID
           success(true);
         } else {
@@ -52,10 +53,10 @@ module.exports = {
       acc += field;
     });
 
-    return new Promise<Array<string>>((success, error) => {
+    return new Promise((success, error) => {
       db.get(`SELECT ${fieldNamesString} FROM ${tableName} WHERE ${condition};`, (err, output) => {
         if (err) {
-          error(output);
+          error(err);
         } else {
           console.log(output);
           success(output.split(' '));
@@ -74,17 +75,17 @@ module.exports = {
     let valuesString = '';
     let keysString = '';
 
-    for (let [key, value] of insertionQuery.entries()) {
+    for (let [key, value] of Object.entries(insertionQuery)) {
       if (valuesString.length > 0) {
         valuesString += ', ';
         keysString += ', ';
       }
 
-      valuesString += value;
+      valuesString += `'${value}'`;
       keysString += key;
     }
 
-    return new Promise<Boolean>((success, error) => {
+    return new Promise((success, error) => {
       // To loop until a valid ID is found would force me to make this Promise, a double Promise, since the callback function would have to be async,
       // instead, since chance of this happening is near 0%, it will be just throwing an error.
       doesIdExist(newId).then(doesExist => {
@@ -93,7 +94,7 @@ module.exports = {
         } else {
           db.run(`INSERT INTO ${tableName} (${keysString}) VALUES (${valuesString});`, (err, output) => {
             if (err) {
-              error(output);
+              error(err);
             } else {
               success(true);
             }
@@ -103,10 +104,10 @@ module.exports = {
     });
   },
   deleteRecord(tableName, condition) {
-    return new Promise<Boolean>((success, error) => {
+    return new Promise((success, error) => {
       db.run(`DELETE FROM ${tableName} WHERE ${condition};`, (err, output) => {
         if (err) {
-          error(output);
+          error(err);
         } else {
           success(true);
         }
