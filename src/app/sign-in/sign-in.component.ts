@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http'; // used for sending the forms out
+import { HttpClient } from '@angular/common/http';
+import {UserContextService} from "../shared/services/user-context.service"; // used for sending the forms out
 
 @Component({
   selector: 'app-sign-in',
@@ -16,7 +17,7 @@ export class SignInComponent {
   loginForm: FormGroup;
   registerForm: FormGroup;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private userContextService: UserContextService) {
     this.registerForm = new FormGroup({
       email: new FormControl('', [Validators.required]),
       username: new FormControl('', [Validators.required, Validators.minLength(3)]),
@@ -36,8 +37,7 @@ export class SignInComponent {
     this.http.post('/api/register', formData, {observe: "response"}).subscribe ({
       next: response => {
         console.log('Successful registration!');
-
-        this.showLoginForm = true
+        this.showLoginForm = true;
       },
       error: error => console.error('Error!', error)
     });
@@ -50,6 +50,8 @@ export class SignInComponent {
     this.http.post('/api/login', formData).subscribe ({
       next: response => {
         console.log('Successful login!');
+        this.userContextService.checkForCookies();
+        this.userContextService.goToDefaultPage();
       },
       error: error => console.error('Error!', error)
     });

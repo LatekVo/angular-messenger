@@ -29,13 +29,13 @@ function dateToString(date) {
 router.post('/tokenLogin', (req, res) => {
   let tokenHash = req.body['token'];
 
-  dbs.getRecord(dbs.AUTH_TABLE, ['token'], `token=${tokenHash}`).then(([token]) => {
-    if (token?.token === undefined || token?.token !== token) {
-      res.writeHead(401);
-      res.send();
-    } else {
+  dbs.getRecord(dbs.AUTH_TABLE, ['token'], `token='${tokenHash}'`).then(output => {
+    if (output) {
       // don't send anything, just confirm the token is fine
       res.writeHead(200);
+      res.send();
+    } else {
+      res.writeHead(401);
       res.send();
     }
   }).catch((err) => {
@@ -46,25 +46,18 @@ router.post('/tokenLogin', (req, res) => {
 });
 
 router.post('/login', (req, res) => {
-  console.log("req body:");
-  console.log(req.body);
-
-  let username = req.body['username'],
+  let usernameOrEmail = req.body['username'],
       password = req.body['password'];
 
-  dbs.getRecord(dbs.USERS_TABLE, ['password', 'id'], `username=${username}`).then(([storedPasswordHash, storedUserId]) => {
+  dbs.getRecord(dbs.USERS_TABLE, ['password', 'id'], `username='${usernameOrEmail}' OR email='${usernameOrEmail}'`).then(output => {
+    let storedPasswordHash = output.password;
+    let storedUserId = output.id;
 
     let isEqual = bcrypt.compareSync(password, storedPasswordHash);
 
     if (isEqual) {
       // make sure the record has been deleted, then proceed with creating the new one
-      dbs.deleteRecord(dbs.AUTH_TABLE, `userId = ${storedUserId}`).then((err) => {
-        if (err) {
-          // this error could just be a 'not found' message, this is to be expected since we are executing the deletion without checking if the record exists.
-          console.log('--- SQL INFORMATION ---');
-          console.log(err);
-        }
-
+      dbs.deleteRecord(dbs.AUTH_TABLE, `userId='${storedUserId}'`).then(() => {
         let tokenHash = hashGen() + hashGen(),
           tokenUserId = storedUserId,
           tokenExpiryDate = new Date(); // unused for now, but necessary for later
@@ -80,19 +73,13 @@ router.post('/login', (req, res) => {
           expiry: tokenExpiryDateString
         };
 
-        dbs.insertRecord(dbs.AUTH_TABLE, tokenInsertionQuery).then((err) => {
-          if (err) {
-            // this error could just be a 'not found' message, this is to be expected since we are executing the deletion without checking if the record exists.
-            console.log('--- SQL ERROR ---');
-            console.log(err);
-          } else {
-            // reminder to self before I forget again - we won't be validating an already existing token, GET /tokenLogin already does that
-            // send session token & home page
-            res.writeHead(200);
-            res.cookie('userToken', tokenHash);
-            res.cookie('userId', tokenUserId);
-            res.send();
-          }
+        dbs.insertRecord(dbs.AUTH_TABLE, tokenInsertionQuery).then(() => {
+          // reminder to self before I forget again - we won't be validating an already existing token, GET /tokenLogin already does that
+          // run goToDefaultPage() in userContextService
+          res.cookie('userToken', tokenHash);
+          res.cookie('userId', tokenUserId);
+          res.writeHead(200);
+          res.send();
 
         });
       });

@@ -11,45 +11,67 @@ import {CookieService} from "./cookie.service";
   providedIn: 'root'
 })
 export class UserContextService {
+  private cookieService;
+  private http;
+  private router;
+
   storedUserId = new BehaviorSubject(localStorage.getItem(lsk.USER_ID));
   storedUserToken = new BehaviorSubject(localStorage.getItem(lsk.USER_TOKEN));
   storedOpenedChatId = new BehaviorSubject(localStorage.getItem(lsk.OPENED_CHAT_ID));
   storedAvailableChatIdList = new BehaviorSubject([]);
 
-  constructor(private http: HttpClient, private router: Router, private cookieService: CookieService) {
+  checkForCookies() {
     // in case of recent login, parse all received cookies and move the data to localStorage
-    let cookieUserToken = cookieService.getCookie(lsk.USER_TOKEN)
+    let cookieUserToken = this.cookieService.getCookie(lsk.USER_TOKEN)
     if (cookieUserToken) {
+      console.log('Cookie Found: USER_TOKEN');
       localStorage.setItem(lsk.USER_TOKEN, cookieUserToken);
       this.storedUserToken.next(cookieUserToken);
-      cookieService.deleteCookie(lsk.USER_TOKEN);
+      this.cookieService.deleteCookie(lsk.USER_TOKEN);
     }
-    let cookieUserId = cookieService.getCookie(lsk.USER_ID)
+    let cookieUserId = this.cookieService.getCookie(lsk.USER_ID)
     if (cookieUserId) {
+      console.log('Cookie Found: USER_ID');
       localStorage.setItem(lsk.USER_ID, cookieUserId);
-      this.storedUserToken.next(cookieUserId);
-      cookieService.deleteCookie(lsk.USER_ID);
+      this.storedUserId.next(cookieUserId);
+      this.cookieService.deleteCookie(lsk.USER_ID);
     }
+  }
 
-    if (this.storedUserToken.value != null && this.storedUserId) {
+  goToDefaultPage() {
+    console.log('Stored values:', this.storedUserToken.value, this.storedUserId.value);
+    if (this.storedUserToken.value != null && this.storedUserId.value != null) {
+      console.log('INFO: credentials present, attempting automatic login');
       // unverified token present
-      http.post('/api/tokenLogin', {token: this.storedUserToken.value}, {observe: "response"}).subscribe(response => {
+      this.http.post('/api/tokenLogin', {token: this.storedUserToken.value}, {observe: "response"}).subscribe(response => {
         if (response.status === 200) {
+          console.log('INFO: logged in with stored credentials');
           // login succeeded
-          if (router.url === '/login') {
-            router.navigate(['/', 'chat']).catch(err => console.log('navigation error: ' + err));
+          if (this.router.url === '/login') {
+            this.router.navigate(['/', 'chat']).catch(err => console.log('navigation error: ' + err));
           }
         } else {
+          console.log('INFO: stored token and userId expired, redirecting to login');
           // token expired
           localStorage.removeItem(lsk.USER_TOKEN);
           localStorage.removeItem(lsk.USER_ID);
 
-          router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
+          this.router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
         }
       });
     } else {
       // no token present
-      router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
+      this.router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
     }
+
+  }
+
+  constructor(private _http: HttpClient, private _router: Router, private _cookieService: CookieService) {
+    this.http = _http;
+    this.router = _router;
+    this.cookieService = _cookieService;
+
+    this.checkForCookies();
+    this.goToDefaultPage();
   }
 }

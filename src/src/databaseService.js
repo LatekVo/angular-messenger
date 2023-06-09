@@ -26,7 +26,7 @@ function doesIdExist(id) {
         error(err);
       } else {
         if (output) {
-          console.log('tried adding duplicate ID: ' + output); // this should be so incredibly rare that it's more likely there is an error than an actually duplicate ID
+          console.log('ERROR: tried adding duplicate ID: ' + output); // this should be so incredibly rare that it's more likely there is an error than an actually duplicate ID
           success(true);
         } else {
           success(false);
@@ -46,11 +46,12 @@ module.exports = {
   MESSAGES_TABLE: 'messages',
 
   getRecord(tableName, fieldNames /*: Array<string>*/, condition) {
-    let fieldNamesString = fieldNames.reduce((acc, field) => {
-      if (acc.length > 0) {
-        acc += ', ';
+    let fieldNamesString = '';
+    fieldNames.forEach((field) => {
+      if (fieldNamesString.length > 0) {
+        fieldNamesString += ', ';
       }
-      acc += field;
+      fieldNamesString += field;
     });
 
     return new Promise((success, error) => {
@@ -58,8 +59,8 @@ module.exports = {
         if (err) {
           error(err);
         } else {
-          console.log(output);
-          success(output.split(' '));
+          // already outputted a JSON
+          success(output);
         }
       });
     });
