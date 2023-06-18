@@ -11,14 +11,8 @@ import {CookieService} from "./cookie.service";
   providedIn: 'root'
 })
 export class UserContextService {
-  private cookieService;
-  private http;
-  private router;
-
   storedUserId = new BehaviorSubject(localStorage.getItem(lsk.USER_ID));
   storedUserToken = new BehaviorSubject(localStorage.getItem(lsk.USER_TOKEN));
-  storedOpenedChatId = new BehaviorSubject(localStorage.getItem(lsk.OPENED_CHAT_ID));
-  storedAvailableChatIdList = new BehaviorSubject([]);
 
   checkForCookies() {
     // in case of recent login, parse all received cookies and move the data to localStorage
@@ -66,11 +60,7 @@ export class UserContextService {
 
   }
 
-  constructor(private _http: HttpClient, private _router: Router, private _cookieService: CookieService) {
-    this.http = _http;
-    this.router = _router;
-    this.cookieService = _cookieService;
-
+  constructor(private http: HttpClient, private router: Router, private cookieService: CookieService) {
     this.checkForCookies();
     this.goToDefaultPage();
   }

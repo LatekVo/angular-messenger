@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 
 const bcrypt = require('bcrypt');
+const {getRecord} = require("./databaseService");
 
 const PAGE_URL = 'localhost:3000';
 
@@ -109,6 +110,49 @@ router.post('/register', (req, res) => {
   dbs.insertRecord(dbs.USERS_TABLE, insertQuery).then(() => {
     res.writeHead(200);
     res.send();
+  });
+});
+
+// NOTE: from now on verification is done via cookies, request.cookies['userToken'] to be used for verification
+// this is a wrapper function for all this, it does all the verification
+function verifyRequest(req, res) {
+  return new Promise((accept, reject) => {
+    let respondUnauthorized = () => {
+      res.writeHead(401);
+      res.send({message: 'Token invalid or expired'});
+      reject();
+    }
+
+    let incomingToken = req.cookies['userToken'];
+    if (incomingToken) {
+      dbs.getRecord(dbs.AUTH_TABLE, ['userId', 'expiry'], `token='${incomingToken}`).then(output => {
+        if (output?.expiry && ( stringToDate(output.expiry) > new Date() )) {
+          accept(output.userId);
+        } else {
+          respondUnauthorized();
+        }
+      });
+    } else {
+      respondUnauthorized();
+    }
+  });
+}
+
+router.post('/sendMessage', (req, res) => {
+  verifyRequest(req, res).then((userId) => {
+
+  });
+});
+
+router.post('/fetchMessages', (req, res) => {
+  verifyRequest(req, res).then(() => {
+
+  });
+});
+
+router.post('/streamMessages', (req, res) => {
+  verifyRequest(req, res).then(() => {
+
   });
 });
 

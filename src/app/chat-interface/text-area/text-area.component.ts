@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { MessageModel } from "../../shared/models/messageModel";
 import { HttpClient } from "@angular/common/http";
+import { UserContextService } from "../../shared/services/user-context.service";
+import { ChatContextService } from "../../shared/services/chat-context.service";
 
 // todo: move all network components to a separate 'API interaction' service
 
@@ -10,25 +12,15 @@ import { HttpClient } from "@angular/common/http";
   styleUrls: ['./text-area.component.css']
 })
 export class TextAreaComponent implements OnInit {
-  messageList: MessageModel[] = []
+  messageList: MessageModel[] = [];
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private userContextService: UserContextService, private chatContextService: ChatContextService) {}
 
   ngOnInit() {
-    // template messages
-    this.messageList = [
-      {senderId: "123", content: "Hi!", senderName: "Joe Brakes", writtenByMe: false},
-      {senderId: "221", content: "Hello", senderName: "Alex", writtenByMe: true},
-      {senderId: "221", content: "Do i know you?", senderName: "Alex", writtenByMe: true},
-      {senderId: "123", content: "Sure,\nyou\ndo\nknow\nme", senderName: "Joe Brakes", writtenByMe: false},
-      {senderId: "123", content: "I'm Joe Brakes!", senderName: "Joe Brakes", writtenByMe: false},
-    ]
-  }
+    this.chatContextService.storedMessageList.subscribe(newValue => {
+      this.messageList = this.chatContextService.storedMessageList.value;
+    });
 
-  /* todo: complete this after implementing the proper API
-  fetchMessages(): Observable<Friend[]> {
-    return this.http.get<Friend[]>('/api/fetchMessages');
+    this.messageList = this.chatContextService.storedMessageList.value;
   }
-  */
-
 }
