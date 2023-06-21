@@ -4,8 +4,6 @@ const express = require('express');
 const router = express.Router();
 
 const bcrypt = require('bcrypt');
-const {getRecord} = require("./databaseService");
-
 const PAGE_URL = 'localhost:3000';
 
 let hashCost = 12; // todo: this value can be changed without harming anything, but should get tuned for ~150ms per hash comparison
@@ -139,19 +137,68 @@ function verifyRequest(req, res) {
 }
 
 router.post('/sendMessage', (req, res) => {
-  verifyRequest(req, res).then((userId) => {
+  verifyRequest(req, res).then(userId => {
+    let messageContent = req.body['content'];
+    let messageChatId = req.body['chatId'];
 
+    // todo: chat_links should ONLY contain user-chat connections
+    // todo: add permissions as a separate database table
+    dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `chatId=${messageChatId} AND userId=${userId}`).then(output => {
+      // check if the user is a member of requested chat
+      if (output?.id) {
+        let messageInsertionQuery = {
+          dateCreated: new Date(),
+          userId: userId,
+          chatId: messageChatId,
+          content: messageContent
+        };
+
+        dbs.insertRecord(dbs.MESSAGES_TABLE, messageInsertionQuery).then(output => {
+          res.writeHead(200); // sent to and received by the server
+          res.send();
+        });
+      } else {
+        res.writeHead(401);
+        res.send({message: 'User is not a member of this chat'});
+      }
+    });
   });
 });
 
 router.post('/fetchMessages', (req, res) => {
-  verifyRequest(req, res).then(() => {
+  verifyRequest(req, res).then(userId => {
+    let chatId = req.body['chatId'];
+    let pagination = req.body['pagination'];
 
+    let batchAmount = pagination.batchAmount;
+    let batchIndex = pagination.batchIndex;
+    let recordFrom = batchAmount * batchIndex;
+    let recordTo = recordFrom + batchAmount;
+
+    // TODO: put all these string keywords into an enum
+
+    dbs.getRecord(dbs.MESSAGES_TABLE, ['id', 'dateCreated', 'userId', 'content'], `chatId=${chatId} AND userId=${userId}`, recordTo, 'dateCreated').then(output => {
+      let requestedOutput = null;
+      console.log('OUTPUT:', output);
+      if (Array.isArray(output)) {
+        // webstorm is so incredibly advanced, it already knows that this branch can only be run after output is determined to be an array, and so it automatically highlights output as an array, but only inside this branch.
+        requestedOutput = output.slice(recordFrom, recordTo); // this function is smart enough no additional checks are required
+
+      } else if (output) {
+        requestedOutput = [output];
+      }
+
+      res.writeHead(200);
+      res.send(requestedOutput);
+
+    });
   });
 });
 
 router.post('/streamMessages', (req, res) => {
-  verifyRequest(req, res).then(() => {
+  verifyRequest(req, res).then(userId => {
+    let chatId = req.body['chatId'];
+
 
   });
 });

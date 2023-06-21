@@ -45,7 +45,7 @@ module.exports = {
   FRIEND_LINKS_TABLE: 'friendLinks',
   MESSAGES_TABLE: 'messages',
 
-  getRecord(tableName, fieldNames /*: Array<string>*/, condition) {
+  getRecord(tableName, fieldNames /*: Array<string>*/, condition, returnsLimit = 1, orderByField = null) {
     let fieldNamesString = '';
     fieldNames.forEach((field) => {
       if (fieldNamesString.length > 0) {
@@ -54,8 +54,12 @@ module.exports = {
       fieldNamesString += field;
     });
 
+    let orderByString = '';
+    if (orderByField)
+      orderByString = `ORDER BY ${orderByField} DESC`;
+
     return new Promise((success, error) => {
-      db.get(`SELECT ${fieldNamesString} FROM ${tableName} WHERE ${condition};`, (err, output) => {
+      db.get(`SELECT TOP ${returnsLimit} ${fieldNamesString} FROM ${tableName} WHERE ${condition} ${orderByString};`, (err, output) => {
         if (err) {
           error(err);
         } else {
@@ -115,4 +119,7 @@ module.exports = {
       });
     });
   }
+
+  // ONE MORE THING I WILL ADD, 'observeRecord' would use a separate db to send
+
 }
