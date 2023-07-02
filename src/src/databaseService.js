@@ -36,7 +36,6 @@ function doesIdExist(id) {
   });
 }
 
-// avoiding using class to force a singleton and cleaner addressing from other files
 module.exports = {
   AUTH_TABLE: 'authorizations',
   USERS_TABLE: 'users',

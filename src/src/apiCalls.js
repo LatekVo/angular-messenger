@@ -136,6 +136,39 @@ function verifyRequest(req, res) {
   });
 }
 
+
+// for now, we will be using standard node's responses instead of sockets,
+// since it turns out .write() actually sends data to client as soon as it is called
+/*
+  Map {
+    '123' : [socket, socket, socket],
+    '234' : [socket]
+  }
+*/
+// todo ASAP: transition to websockets, it's the simplest way to make sure offline clients are removed from the list
+// right now it's not as bad anymore, as there will be as many open connections at most as there are users. (earlier, it could go to infinity)
+let messageBroadcastingSockets = new Map();
+
+function addListenerSocket(chatId, userId, responseObject) {
+  // .get() refers to the Array object, instead of copying it
+  let listenerMap = messageBroadcastingSockets.get(chatId);
+
+  if (!listenerMap) {
+    messageBroadcastingSockets.set(chatId, new Map([[userId, responseObject]]));
+  } else {
+    listenerMap[userId] = responseObject; // add or update listening response
+  }
+}
+
+function broadcastMessage(chatId, messageObject) {
+  let socketList = messageBroadcastingSockets.get(chatId);
+
+  socketList.forEach(res => {
+    res.write(messageObject);
+  })
+
+}
+
 router.post('/sendMessage', (req, res) => {
   verifyRequest(req, res).then(userId => {
     let messageContent = req.body['content'];
@@ -154,6 +187,9 @@ router.post('/sendMessage', (req, res) => {
         };
 
         dbs.insertRecord(dbs.MESSAGES_TABLE, messageInsertionQuery).then(output => {
+
+          broadcastMessage(messageChatId, messageInsertionQuery);
+
           res.writeHead(200); // sent to and received by the server
           res.send();
         });
@@ -199,6 +235,7 @@ router.post('/streamMessages', (req, res) => {
   verifyRequest(req, res).then(userId => {
     let chatId = req.body['chatId'];
 
+    addListenerSocket(chatId, userId, res);
 
   });
 });
