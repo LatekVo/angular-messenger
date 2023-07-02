@@ -147,6 +147,7 @@ function verifyRequest(req, res) {
 */
 // todo ASAP: transition to websockets, it's the simplest way to make sure offline clients are removed from the list
 // right now it's not as bad anymore, as there will be as many open connections at most as there are users. (earlier, it could go to infinity)
+// TODO: This can be probably actually moved to the SQLITE database, using a type called BLOB, it stores data in it's raw format
 let messageBroadcastingSockets = new Map();
 
 function addListenerSocket(chatId, userId, responseObject) {
@@ -239,5 +240,57 @@ router.post('/streamMessages', (req, res) => {
 
   });
 });
+
+// Chats schema:
+// /joinChat - works on OPEN chats, doesn't on PRIVATE
+// /inviteToChat - works on
+router.post('/fetchChats', (req, res) => {
+  verifyRequest(req, res).then(userId => {
+
+  });
+});
+
+router.post('/createChat', (req, res) => {
+  verifyRequest(req, res).then(userId => {
+
+  });
+});
+
+router.post('/joinChat', (req, res) => {
+  verifyRequest(req, res).then(userId => {
+
+  });
+});
+
+router.post('/inviteToChat', (req, res) => {
+  verifyRequest(req, res).then(userId => {
+
+  });
+});
+
+
+// Friend status in future will grant some privileges, like allowing for private messages or adding to group without asking
+router.post('/fetchFriends', (req, res) => {
+  verifyRequest(req, res).then(userId => {
+    // limit is arbitrary, add pagination
+    dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['userIdFirst', 'userIdSecond'], `userIdFirst=${userId} OR userIdSecond=${userId}`, 500, 'dateCreated').then(output => {
+
+
+    });
+
+  });
+});
+router.post('/addFriend', (req, res) => {
+  verifyRequest(req, res).then(userId => {
+
+  });
+});
+
+router.post('/removeFriend', (req, res) => {
+  verifyRequest(req, res).then(userId => {
+
+  });
+});
+
 
 module.exports = router;

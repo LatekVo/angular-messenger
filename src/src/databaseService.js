@@ -58,7 +58,7 @@ module.exports = {
       orderByString = `ORDER BY ${orderByField} DESC`;
 
     return new Promise((success, error) => {
-      db.get(`SELECT TOP ${returnsLimit} ${fieldNamesString} FROM ${tableName} WHERE ${condition} ${orderByString};`, (err, output) => {
+      db.get(`SELECT ${fieldNamesString} FROM ${tableName} WHERE ${condition} ${orderByString} LIMIT ${returnsLimit};`, (err, output) => {
         if (err) {
           error(err);
         } else {

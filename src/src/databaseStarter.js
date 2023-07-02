@@ -43,6 +43,7 @@ db.run(`
 CREATE TABLE IF NOT EXISTS chats (
   id TEXT PRIMARY KEY,
 
+  isPublic INTEGER,
   dateCreated DATETIME,
   ownerId TEXT,
 
