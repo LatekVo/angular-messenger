@@ -67,6 +67,20 @@ CREATE TABLE IF NOT EXISTS friendLinks (
 `, dbErrorCallback);
 
 db.run(`
+CREATE TABLE IF NOT EXISTS friendRequests (
+  id TEXT PRIMARY KEY,
+
+  dateCreated DATETIME,
+  userIdRequester TEXT,
+  userIdRecipient TEXT,
+
+  FOREIGN KEY(userIdRequester) REFERENCES users(id),
+  FOREIGN KEY(userIdRecipient) REFERENCES users(id)
+
+  );
+`, dbErrorCallback);
+
+db.run(`
 CREATE TABLE IF NOT EXISTS chatLinks (
   id TEXT PRIMARY KEY,
 

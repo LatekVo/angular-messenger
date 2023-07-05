@@ -42,6 +42,7 @@ module.exports = {
   CHATS_TABLE: 'chats',
   CHAT_LINKS_TABLE: 'chatLinks',
   FRIEND_LINKS_TABLE: 'friendLinks',
+  FRIEND_REQUESTS_TABLE: 'friendRequests',
   MESSAGES_TABLE: 'messages',
 
   getRecord(tableName, fieldNames /*: Array<string>*/, condition, returnsLimit = 1, orderByField = null) {
@@ -58,12 +59,15 @@ module.exports = {
       orderByString = `ORDER BY ${orderByField} DESC`;
 
     return new Promise((success, error) => {
-      db.get(`SELECT ${fieldNamesString} FROM ${tableName} WHERE ${condition} ${orderByString} LIMIT ${returnsLimit};`, (err, output) => {
+      db.all(`SELECT ${fieldNamesString} FROM ${tableName} WHERE ${condition} ${orderByString} LIMIT ${returnsLimit};`, (err, output) => {
         if (err) {
           error(err);
         } else {
-          // already outputted a JSON
-          success(output);
+          if (returnsLimit === 1) {
+            success(output?.[0]);
+          } else {
+            success(output);
+          }
         }
       });
     });

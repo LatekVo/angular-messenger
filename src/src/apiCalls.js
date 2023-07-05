@@ -272,23 +272,74 @@ router.post('/inviteToChat', (req, res) => {
 // Friend status in future will grant some privileges, like allowing for private messages or adding to group without asking
 router.post('/fetchFriends', (req, res) => {
   verifyRequest(req, res).then(userId => {
+
+    let getFriendId = (outputObject) => {
+      if (outputObject['userIdFirst'] === userId) {
+        return outputObject['userIdSecond'];
+      } else {
+        return outputObject['userIdFirst'];
+      }
+    }
+
     // limit is arbitrary, add pagination
     dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['userIdFirst', 'userIdSecond'], `userIdFirst=${userId} OR userIdSecond=${userId}`, 500, 'dateCreated').then(output => {
+      let friendsList = [];
 
+      if (output) {
+        output.forEach(x => {
+          friendsList.push(getFriendId(x));
+        });
+      }
+
+      res.writeHead(200);
+      res.send(friendsList);
 
     });
-
   });
 });
 router.post('/addFriend', (req, res) => {
   verifyRequest(req, res).then(userId => {
+    let friendId = req.body['friendId'];
+    let friendRequestInsertion = {
+      dateCreated: new Date(),
+      userIdRequester: userId,
+      userIdRecipient: friendId
+    };
 
+    // check if the recipient already tried to add the requester as a friend
+    dbs.getRecord(dbs.FRIEND_REQUESTS_TABLE, ['id'], `userIdRequester=${friendId} AND userIdRecipient=${userId}`).then(output => {
+      if (output) {
+        // pending friend request accepted & deleted
+        dbs.deleteRecord(dbs.FRIEND_REQUESTS_TABLE, `userIdRequester=${friendId} AND userIdRecipient=${userId}`).then(x => {
+          res.writeHead(200, 'friend added');
+          res.send();
+        });
+      } else {
+        // make sure these aren't already friends
+        dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['id'], `(userIdFirst=${userId} AND userIdSecond=${friendId}) OR (userIdFirst=${friendId} AND userIdSecond=${userId})`).then(exitingFriendsRecord => {
+          if (exitingFriendsRecord) {
+            res.writeHead(300, 'already added this friend');
+            res.send();
+          } else {
+            // added a friend request
+            dbs.insertRecord(dbs.FRIEND_REQUESTS_TABLE, friendRequestInsertion).then(x => {
+              res.writeHead(200, 'request sent');
+              res.send();
+            });
+          }
+        });
+      }
+    });
   });
 });
 
 router.post('/removeFriend', (req, res) => {
   verifyRequest(req, res).then(userId => {
-
+    let friendId = req.body['friendId'];
+    dbs.deleteRecord(dbs.FRIEND_LINKS_TABLE, `(userIdFirst=${userId} AND userIdSecond=${friendId}) OR (userIdFirst=${friendId} AND userIdSecond=${userId})`).then(output => {
+      res.writeHead(200);
+      res.send();
+    });
   });
 });
 
