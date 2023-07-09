@@ -41,6 +41,7 @@ module.exports = {
   USERS_TABLE: 'users',
   CHATS_TABLE: 'chats',
   CHAT_LINKS_TABLE: 'chatLinks',
+  CHAT_INVITATIONS_TABLE: 'chatInvitations',
   FRIEND_LINKS_TABLE: 'friendLinks',
   FRIEND_REQUESTS_TABLE: 'friendRequests',
   MESSAGES_TABLE: 'messages',
@@ -76,9 +77,7 @@ module.exports = {
   insertRecord(tableName, insertionQuery) {
 
     // 16-long hexadecimal hash, near 0% chance of IDs repeating, assigned if no other ID is detected
-    let newId = Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-
-    insertionQuery.id = insertionQuery.id ?? newId;
+    insertionQuery.id = insertionQuery.id ?? Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 
     let valuesString = '';
     let keysString = '';
@@ -96,7 +95,7 @@ module.exports = {
     return new Promise((success, error) => {
       // To loop until a valid ID is found would force me to make this Promise, a double Promise, since the callback function would have to be async,
       // instead, since chance of this happening is near 0%, it will be just throwing an error.
-      doesIdExist(newId).then(doesExist => {
+      doesIdExist(insertionQuery.id).then(doesExist => {
         if (doesExist) {
           error('Generated duplicate ID, try again.');
         } else {
@@ -104,7 +103,7 @@ module.exports = {
             if (err) {
               error(err);
             } else {
-              success(true);
+              success(insertionQuery.id);
             }
           });
         }

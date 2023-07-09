@@ -40,19 +40,6 @@ CREATE TABLE IF NOT EXISTS authorizations (
 `, dbErrorCallback);
 
 db.run(`
-CREATE TABLE IF NOT EXISTS chats (
-  id TEXT PRIMARY KEY,
-
-  isPublic INTEGER,
-  dateCreated DATETIME,
-  ownerId TEXT,
-
-  FOREIGN KEY(ownerId) REFERENCES users(id)
-
-  );
-`, dbErrorCallback);
-
-db.run(`
 CREATE TABLE IF NOT EXISTS friendLinks (
   id TEXT PRIMARY KEY,
 
@@ -81,6 +68,19 @@ CREATE TABLE IF NOT EXISTS friendRequests (
 `, dbErrorCallback);
 
 db.run(`
+CREATE TABLE IF NOT EXISTS chats (
+  id TEXT PRIMARY KEY,
+
+  isPublic INTEGER,
+  dateCreated DATETIME,
+  ownerId TEXT,
+
+  FOREIGN KEY(ownerId) REFERENCES users(id)
+
+  );
+`, dbErrorCallback);
+
+db.run(`
 CREATE TABLE IF NOT EXISTS chatLinks (
   id TEXT PRIMARY KEY,
 
@@ -88,6 +88,22 @@ CREATE TABLE IF NOT EXISTS chatLinks (
   userId TEXT,
   chatId TEXT,
 
+  FOREIGN KEY(userId) REFERENCES users(id),
+  FOREIGN KEY(chatId) REFERENCES chats(id)
+
+  );
+`, dbErrorCallback);
+
+db.run(`
+CREATE TABLE IF NOT EXISTS chatInvitations (
+  id TEXT PRIMARY KEY,
+
+  dateCreated DATETIME,
+  authorId TEXT,
+  userId TEXT,
+  chatId TEXT,
+
+  FOREIGN KEY(authorId) REFERENCES users(id),
   FOREIGN KEY(userId) REFERENCES users(id),
   FOREIGN KEY(chatId) REFERENCES chats(id)
 

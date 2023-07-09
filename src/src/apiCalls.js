@@ -23,6 +23,10 @@ function stringToDate(string) {
 function dateToString(date) {
   return date.toISOString().slice(0, 19).replace('T', ' ');
 }
+
+function newSqlDate() {
+  return dateToString(new Date());
+}
 // every route in here to be addressed by /api/___
 
 router.post('/tokenLogin', (req, res) => {
@@ -59,9 +63,8 @@ router.post('/login', (req, res) => {
       dbs.deleteRecord(dbs.AUTH_TABLE, `userId='${storedUserId}'`).then(() => {
         let tokenHash = hashGen() + hashGen(),
           tokenUserId = storedUserId,
-          tokenExpiryDate = new Date(); // unused for now, but necessary for later
+          tokenExpiryDate = newSqlDate(); // unused for now, but necessary for later
 
-        let currentDate = new Date();
         tokenExpiryDate.setDate(tokenExpiryDate.getDate()+31); // set the expiry as 1 month into the future
 
         let tokenExpiryDateString = dateToString(tokenExpiryDate);
@@ -116,7 +119,7 @@ router.post('/register', (req, res) => {
 function verifyRequest(req, res) {
   return new Promise((accept, reject) => {
     let respondUnauthorized = () => {
-      res.writeHead(401);
+      res.writeHead(401, 'Token invalid or expired');
       res.send({message: 'Token invalid or expired'});
       reject();
     }
@@ -166,8 +169,7 @@ function broadcastMessage(chatId, messageObject) {
 
   socketList.forEach(res => {
     res.write(messageObject);
-  })
-
+  });
 }
 
 router.post('/sendMessage', (req, res) => {
@@ -181,7 +183,7 @@ router.post('/sendMessage', (req, res) => {
       // check if the user is a member of requested chat
       if (output?.id) {
         let messageInsertionQuery = {
-          dateCreated: new Date(),
+          dateCreated: newSqlDate(),
           userId: userId,
           chatId: messageChatId,
           content: messageContent
@@ -237,7 +239,6 @@ router.post('/streamMessages', (req, res) => {
     let chatId = req.body['chatId'];
 
     addListenerSocket(chatId, userId, res);
-
   });
 });
 
@@ -246,25 +247,98 @@ router.post('/streamMessages', (req, res) => {
 // /inviteToChat - works on
 router.post('/fetchChats', (req, res) => {
   verifyRequest(req, res).then(userId => {
-
+    dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['chatId'], `userId=${userId}`, 500).then(output => {
+      res.writeHead(200);
+      res.send(output);
+    });
   });
 });
 
 router.post('/createChat', (req, res) => {
   verifyRequest(req, res).then(userId => {
+    let currentDate = newSqlDate();
 
+    // todo: rate-limit this
+
+    // add chat and add self
+    let chatInsertion = {
+      isPublic: 0,
+      dateCreated: currentDate,
+      ownerId: userId
+    }
+    dbs.insertRecord(dbs.CHATS_TABLE, chatInsertion).then(chatId => {
+      let chatLinkInsertion = {
+        dateJoined: currentDate,
+        userId: userId,
+        chatId: chatId,
+      }
+      dbs.insertRecord(dbs.CHAT_LINKS_TABLE, chatLinkInsertion).then(output => {
+        res.writeHead(200, 'New chat created successfully!');
+      });
+    });
   });
 });
 
 router.post('/joinChat', (req, res) => {
   verifyRequest(req, res).then(userId => {
+    let chatId = req.body['chatId'];
 
+    // If chat is public, just add user, if private, check for an invitation
+    dbs.getRecord(dbs.CHATS_TABLE, ['isPublic'], `id=${chatId}`).then(output => {
+      // todo: types may need fixing here, test it again when the system will be up
+      let finalizeInsertion = () => {
+        let chatMemberInsertion = {
+          dateJoined: newSqlDate(),
+          userId: userId,
+          chatId: chatId
+        }
+        dbs.insertRecord(dbs.CHAT_LINKS_TABLE, chatMemberInsertion).then(output => {
+          res.writeHead(200, 'Successfully joined chat!');
+          res.send();
+        });
+      }
+
+      if (output?.['isPublic'] === '1') {
+        finalizeInsertion();
+      } else {
+        // if private, check if user was invited
+        dbs.getRecord(dbs.CHAT_INVITATIONS_TABLE, ['id'], `userId=${userId} AND chatId=${chatId}`).then(output => {
+          if (output) {
+            finalizeInsertion();
+          } else {
+            res.writeHead(301, 'This server is private or does not exist!');
+            res.send();
+          }
+        });
+      }
+    });
   });
 });
 
 router.post('/inviteToChat', (req, res) => {
   verifyRequest(req, res).then(userId => {
+    // todo: for now, any member of a server can invite an user, when i add permissions support, only allow 'inviter' perms to invite users
+    let invitedId = req.body['invitedId'],
+        chatId = req.body['chatId']
 
+    // check if user is a member of this server
+    dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `userId=${userId} AND chatId=${chatId}`).then(output => {
+      if (output) {
+        let invitationInsertion = {
+          dateCreated: newSqlDate(),
+          authorId: userId,
+          userId: invitedId,
+          chatId: chatId
+        }
+        dbs.insertRecord(dbs.CHAT_INVITATIONS_TABLE, invitationInsertion).then(output => {
+          res.writeHead(200, 'Successfully invited user to this server!');
+          res.send();
+        });
+      } else {
+        res.writeHead(301, 'You are not allowed to do that!');
+        res.send();
+      }
+    });
   });
 });
 
@@ -301,7 +375,7 @@ router.post('/addFriend', (req, res) => {
   verifyRequest(req, res).then(userId => {
     let friendId = req.body['friendId'];
     let friendRequestInsertion = {
-      dateCreated: new Date(),
+      dateCreated: newSqlDate(),
       userIdRequester: userId,
       userIdRecipient: friendId
     };
