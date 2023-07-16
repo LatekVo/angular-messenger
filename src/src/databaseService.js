@@ -9,11 +9,13 @@ const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'));
 function doesIdExist(id) {
   // TODO: generate this list automatically
   let query = [
-    'users',
     'authorizations',
+    'users',
     'chats',
-    'friendLinks',
     'chatLinks',
+    'chatInvitations',
+    'friendLinks',
+    'friendRequests',
     'messages'
   ]
     .map(tableName => tableName = `SELECT id FROM ${tableName} WHERE id='${id}'`)

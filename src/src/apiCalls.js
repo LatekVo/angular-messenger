@@ -139,7 +139,6 @@ function verifyRequest(req, res) {
   });
 }
 
-
 // for now, we will be using standard node's responses instead of sockets,
 // since it turns out .write() actually sends data to client as soon as it is called
 /*
@@ -342,11 +341,22 @@ router.post('/inviteToChat', (req, res) => {
   });
 });
 
+router.post('/getUsername', (req, res) => {
+  let checkedId = req.body['id'];
+  dbs.getRecord(dbs.USERS_TABLE, ['id', 'username'], `id=${checkedId}`).then((output) => {
+    if (output?.username) {
+      res.writeHead(200);
+      res.send(output.username);
+    } else {
+      res.writeHead(300, 'This id does not exist!');
+      res.send();
+    }
+  });
+});
 
 // Friend status in future will grant some privileges, like allowing for private messages or adding to group without asking
-router.post('/fetchFriends', (req, res) => {
+router.get('/fetchFriends', (req, res) => {
   verifyRequest(req, res).then(userId => {
-
     let getFriendId = (outputObject) => {
       if (outputObject['userIdFirst'] === userId) {
         return outputObject['userIdSecond'];
@@ -385,19 +395,19 @@ router.post('/addFriend', (req, res) => {
       if (output) {
         // pending friend request accepted & deleted
         dbs.deleteRecord(dbs.FRIEND_REQUESTS_TABLE, `userIdRequester=${friendId} AND userIdRecipient=${userId}`).then(x => {
-          res.writeHead(200, 'friend added');
+          res.writeHead(200, 'Friend added.');
           res.send();
         });
       } else {
         // make sure these aren't already friends
         dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['id'], `(userIdFirst=${userId} AND userIdSecond=${friendId}) OR (userIdFirst=${friendId} AND userIdSecond=${userId})`).then(exitingFriendsRecord => {
           if (exitingFriendsRecord) {
-            res.writeHead(300, 'already added this friend');
+            res.writeHead(300, 'Already added this friend!');
             res.send();
           } else {
             // added a friend request
             dbs.insertRecord(dbs.FRIEND_REQUESTS_TABLE, friendRequestInsertion).then(x => {
-              res.writeHead(200, 'request sent');
+              res.writeHead(200, 'Request sent.');
               res.send();
             });
           }
@@ -407,6 +417,9 @@ router.post('/addFriend', (req, res) => {
   });
 });
 
+// fixme: i disabled friend deletion because of how db works, in summary, deleting friendship will create zombie chats
+// todo: change this delete to alter
+// a dirty but much better method would be to have the friendshipId be deterministic: it's always friendOneId + friendTwoId, this way even after deletion and creation it would be much simpler to reattain lost chats.
 router.post('/removeFriend', (req, res) => {
   verifyRequest(req, res).then(userId => {
     let friendId = req.body['friendId'];

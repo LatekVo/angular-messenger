@@ -38,6 +38,9 @@
 
   background-color: var(--basecolor-dark);
   color: white;
+
+  overflow: hidden;
+  position: relative; /* create element anchor */
 }
 
 .friend-panel > span {
@@ -51,4 +54,43 @@
   font-family: monospace;
 
   overflow: hidden;
+}
+
+.join-chat-text-box, .join-chat-input-box {
+  display: inline-block;
+  position: absolute;
+
+  width: 100%;
+  height: 100%;
+  transition: left 0.3s ease-in-out;
+
+  font-size: 1vw;
+  text-align: center;
+  font-family: monospace;
+}
+
+.join-chat-text-box > span, .join-chat-input-box > span {
+  display: inline-block;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.join-chat-text-box {
+  left: 0;
+  top: 0;
+}
+
+.join-chat-input-box {
+  left: 100%;
+  top: 0;
+  background-color: var(--basecolor-accent);
+}
+
+.friend-panel:hover .join-chat-text-box {
+  left: -100%;
+}
+
+.friend-panel:hover .join-chat-input-box {
+  left: 0;
 }

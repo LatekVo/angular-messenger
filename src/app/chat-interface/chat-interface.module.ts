@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {CommonModule, NgOptimizedImage} from '@angular/common';
 import { FriendsListComponent } from './friends-list/friends-list.component';
 import { TextAreaComponent } from './text-area/text-area.component';
 import { InfoTabComponent } from './info-tab/info-tab.component';
@@ -15,12 +15,13 @@ import { SharedModule } from "../shared/shared.module";
     InfoTabComponent,
     ChatInterfaceComponent
   ],
-  imports: [
-    SharedModule,
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule
-  ],
+    imports: [
+        SharedModule,
+        CommonModule,
+        ReactiveFormsModule,
+        FormsModule,
+        NgOptimizedImage
+    ],
   exports: [
     ChatInterfaceComponent
   ],

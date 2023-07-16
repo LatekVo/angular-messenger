@@ -1,5 +1,5 @@
 export interface PersonModel {
-  firstName: string;
-  lastName: string;
+  username: string | undefined;
+  id: string;
   pfpSourceUrl: string;
 }

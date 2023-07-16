@@ -23,4 +23,11 @@ export class TextAreaComponent implements OnInit {
 
     this.messageList = this.chatContextService.storedMessageList.value;
   }
+
+  messageInput: string = "";
+
+  sendMessage() {
+    this.http.post('/api/sendMessage', {content: this.messageInput, chatId: this.chatContextService.storedOpenedChatId});
+    this.messageInput = "";
+  }
 }
