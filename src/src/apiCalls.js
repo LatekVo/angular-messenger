@@ -240,7 +240,18 @@ router.post('/streamMessages', (req, res) => {
     addListenerSocket(chatId, userId, res);
   });
 });
-
+router.post('/getChatName', (req, res) => {
+  let checkedId = req.body['id'];
+  dbs.getRecord(dbs.CHATS_TABLE, ['chatName'], `id=${checkedId}`).then((output) => {
+    if (output?.chatName) {
+      res.writeHead(200);
+      res.send(output.chatName);
+    } else {
+      res.writeHead(300, 'This id does not exist!');
+      res.send();
+    }
+  });
+});
 // Chats schema:
 // /joinChat - works on OPEN chats, doesn't on PRIVATE
 // /inviteToChat - works on
@@ -343,7 +354,7 @@ router.post('/inviteToChat', (req, res) => {
 
 router.post('/getUsername', (req, res) => {
   let checkedId = req.body['id'];
-  dbs.getRecord(dbs.USERS_TABLE, ['id', 'username'], `id=${checkedId}`).then((output) => {
+  dbs.getRecord(dbs.USERS_TABLE, ['username'], `id=${checkedId}`).then((output) => {
     if (output?.username) {
       res.writeHead(200);
       res.send(output.username);
@@ -366,7 +377,7 @@ router.get('/fetchFriends', (req, res) => {
     }
 
     // limit is arbitrary, add pagination
-    dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['userIdFirst', 'userIdSecond'], `userIdFirst=${userId} OR userIdSecond=${userId}`, 500, 'dateCreated').then(output => {
+    dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['userIdFirst', 'userIdSecond'], `(userIdFirst=${userId} OR userIdSecond=${userId}) AND isActive=1`, 500, 'dateCreated').then(output => {
       let friendsList = [];
 
       if (output) {
@@ -387,7 +398,8 @@ router.post('/addFriend', (req, res) => {
     let friendRequestInsertion = {
       dateCreated: newSqlDate(),
       userIdRequester: userId,
-      userIdRecipient: friendId
+      userIdRecipient: friendId,
+      isActive: 1
     };
 
     // check if the recipient already tried to add the requester as a friend
@@ -400,12 +412,24 @@ router.post('/addFriend', (req, res) => {
         });
       } else {
         // make sure these aren't already friends
-        dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['id'], `(userIdFirst=${userId} AND userIdSecond=${friendId}) OR (userIdFirst=${friendId} AND userIdSecond=${userId})`).then(exitingFriendsRecord => {
+        dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['isActive'], `(userIdFirst=${userId} AND userIdSecond=${friendId}) OR (userIdFirst=${friendId} AND userIdSecond=${userId})`).then(exitingFriendsRecord => {
           if (exitingFriendsRecord) {
-            res.writeHead(300, 'Already added this friend!');
-            res.send();
+            // reactivate the connection if not active yet
+            if (String(exitingFriendsRecord.isActive) === '0') {
+              let updateQuery = {
+                isActive: 1,
+              }
+              dbs.updateRecord(dbs.FRIEND_LINKS_TABLE, updateQuery, `(userIdFirst=${userId} AND userIdSecond=${friendId}) OR (userIdFirst=${friendId} AND userIdSecond=${userId})`).then(output => {
+                res.writeHead(200, 'Friend added.');
+                res.send();
+              });
+            } else {
+              // friend link just exists already and is already active, invalid request
+              res.writeHead(300, 'Already added this friend!');
+              res.send();
+            }
           } else {
-            // added a friend request
+            // send a friend request
             dbs.insertRecord(dbs.FRIEND_REQUESTS_TABLE, friendRequestInsertion).then(x => {
               res.writeHead(200, 'Request sent.');
               res.send();
@@ -423,7 +447,10 @@ router.post('/addFriend', (req, res) => {
 router.post('/removeFriend', (req, res) => {
   verifyRequest(req, res).then(userId => {
     let friendId = req.body['friendId'];
-    dbs.deleteRecord(dbs.FRIEND_LINKS_TABLE, `(userIdFirst=${userId} AND userIdSecond=${friendId}) OR (userIdFirst=${friendId} AND userIdSecond=${userId})`).then(output => {
+    let updateQuery = {
+      isActive: 0,
+    }
+    dbs.updateRecord(dbs.FRIEND_LINKS_TABLE, updateQuery, `(userIdFirst=${userId} AND userIdSecond=${friendId}) OR (userIdFirst=${friendId} AND userIdSecond=${userId})`).then(output => {
       res.writeHead(200);
       res.send();
     });

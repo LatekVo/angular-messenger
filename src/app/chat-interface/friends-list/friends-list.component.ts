@@ -19,20 +19,13 @@ export class FriendsListComponent implements OnInit {
 
   ngOnInit() {
     // todo: profile pictures: will be hosted on a static get server, with all images being [id].png, this will allow us to add an change images for anything that could be a db object, since ids are unique globally
-    // fixme: temporarily hardcoded
-    this.chatList = [
-      // placeholder values for testing
-      {name: "Bob Drew", id: "13231", pfpSourceUrl: "/assets/placeholder_pfp.png"},
-      {name: "Ale Moin", id: "51266", pfpSourceUrl: "/assets/placeholder_pfp.png"},
-      {name: "Lew Berg", id: "91427", pfpSourceUrl: "/assets/placeholder_pfp.png"}
-    ]
-
+    // name: [downloaded]; id: [id]; pfpSourceUrl: [id].png;
     this.friendList = [
       // placeholder values for testing
       {username: "Bob Drew", id: "61223", pfpSourceUrl: "/assets/placeholder_pfp.png"},
       {username: "Ale Moin", id: "52323", pfpSourceUrl: "/assets/placeholder_pfp.png"},
       {username: "Lew Berg", id: "97602", pfpSourceUrl: "/assets/placeholder_pfp.png"}
-    ]
+    ];
 
     this.fetchFriends().subscribe((rawFriendIdList) => {
       // use raw IDs to get all remaining data required
@@ -52,19 +45,41 @@ export class FriendsListComponent implements OnInit {
           listObject[listIndex].username = username;
         });
       });
-    })
+    });
 
-    // name: [downloaded]; id: [id]; pfpSourceUrl: [id].png;
+    this.chatList = [
+      // placeholder values for testing
+      {chatName: "Bob Drew", id: "13231", pfpSourceUrl: "/assets/placeholder_pfp.png"},
+      {chatName: "Ale Moin", id: "51266", pfpSourceUrl: "/assets/placeholder_pfp.png"},
+      {chatName: "Lew Berg", id: "91427", pfpSourceUrl: "/assets/placeholder_pfp.png"}
+    ];
 
+    this.fetchChats().subscribe((rawChatIdList) => {
+      this.chatList = rawChatIdList.map((chatId) => {
+        return {
+          chatName: undefined,
+          id: chatId,
+          pfpSourceUrl: `${chatId}.png`
+        }
+      });
+
+      this.chatList.forEach((chat, listIndex, listObject) => {
+        this.http.post<string>('/api/getChatName', {id: chat.id}).subscribe((chatName) => {
+          listObject[listIndex].chatName = chatName;
+        });
+      });
+    });
   }
 
   // TODO: add API for fetchFriendList
 
   fetchFriends(): Observable<string[]> {
-    return this.http.get<string[]>('/api/fetchFriendList');
+    return this.http.get<string[]>('/api/fetchFriends');
   }
 
-
+  fetchChats(): Observable<string[]> {
+    return this.http.get<string[]>('/api/fetchChats');
+  }
 
   // we are using the ngModel to bind the input box to this var
   searchInput: string = "";

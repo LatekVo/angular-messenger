@@ -1,5 +1,5 @@
 export interface ChatModel {
-  name: string | undefined;
+  chatName: string | undefined;
   id: string;
   pfpSourceUrl: string;
 }

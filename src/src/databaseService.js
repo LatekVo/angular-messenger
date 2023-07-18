@@ -101,7 +101,7 @@ module.exports = {
         if (doesExist) {
           error('Generated duplicate ID, try again.');
         } else {
-          db.run(`INSERT INTO ${tableName} (${keysString}) VALUES (${valuesString});`, (err, output) => {
+          db.run(`INSERT INTO ${tableName} (${keysString}) VALUES (${valuesString});`, (err) => {
             if (err) {
               error(err);
             } else {
@@ -114,7 +114,26 @@ module.exports = {
   },
   deleteRecord(tableName, condition) {
     return new Promise((success, error) => {
-      db.run(`DELETE FROM ${tableName} WHERE ${condition};`, (err, output) => {
+      db.run(`DELETE FROM ${tableName} WHERE ${condition};`, (err) => {
+        if (err) {
+          error(err);
+        } else {
+          success(true);
+        }
+      });
+    });
+  },
+  updateRecord(tableName, updateQuery, condition) {
+    let keyValueString = '';
+    for (let [key, value] of Object.entries(updateQuery)) {
+      if (keyValueString.length > 0) {
+        keyValueString += ', ';
+      }
+      keyValueString += `${key} = ${value}`;
+    }
+
+    return new Promise((success, error) => {
+      db.run(`UPDATE TABLE SET ${keyValueString} WHERE ${condition} LIMIT 1;`, (err) => {
         if (err) {
           error(err);
         } else {

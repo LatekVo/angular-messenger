@@ -39,9 +39,7 @@ CREATE TABLE IF NOT EXISTS authorizations (
   );
 `, dbErrorCallback);
 
-// todo: alter all friend related functions to check for existing links and just edit them.
-// the idea is, if we deleted the friendship, we would also have to delete the associated chat.
-// instead, if friend is removed, we will change the link to inactive, but still keep it and it's existence
+// if friend is removed, we will change the link to inactive, but still keep the link and the related chat
 db.run(`
 CREATE TABLE IF NOT EXISTS friendLinks (
   id TEXT PRIMARY KEY,
@@ -49,6 +47,8 @@ CREATE TABLE IF NOT EXISTS friendLinks (
   dateCreated DATETIME,
   userIdFirst TEXT,
   userIdSecond TEXT,
+
+  isActive INTEGER,
 
   FOREIGN KEY(userIdFirst) REFERENCES users(id),
   FOREIGN KEY(userIdSecond) REFERENCES users(id)
