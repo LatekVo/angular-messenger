@@ -3,6 +3,9 @@ const app = express();
 const path = require('path');
 const fs = require('fs');
 const bodyParser = require('body-parser');
+const cookieParser = require("cookie-parser");
+
+app.use(cookieParser());
 app.use(bodyParser.json());
 
 const databaseStarter = require('./src/databaseStarter');

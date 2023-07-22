@@ -55,6 +55,7 @@ export class FriendsListComponent implements OnInit {
     ];
 
     this.fetchChats().subscribe((rawChatIdList) => {
+      console.log('chats raw IDs: ', rawChatIdList)
       this.chatList = rawChatIdList.map((chatId) => {
         return {
           chatName: undefined,
@@ -74,11 +75,13 @@ export class FriendsListComponent implements OnInit {
   // TODO: add API for fetchFriendList
 
   fetchFriends(): Observable<string[]> {
-    return this.http.get<string[]>('/api/fetchFriends');
+    console.log('fetching users');
+    return this.http.post<string[]>('/api/fetchFriends', {});
   }
 
   fetchChats(): Observable<string[]> {
-    return this.http.get<string[]>('/api/fetchChats');
+    console.log('fetching chats');
+    return this.http.post<string[]>('/api/fetchChats', {});
   }
 
   // we are using the ngModel to bind the input box to this var

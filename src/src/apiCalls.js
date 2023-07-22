@@ -8,6 +8,12 @@ const PAGE_URL = 'localhost:3000';
 
 let hashCost = 12; // todo: this value can be changed without harming anything, but should get tuned for ~150ms per hash comparison
 
+// fixme: important note: .send() actually adds headers, and since double-adding headers throws an error, it cannot be used with .writeHead()
+// permanent debugging bit, it will only potentially log on errors that would have crashed the server if it wasn't for this piece of code
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise);
+});
+
 
 // ~4.5 * 10^15 combinations
 function hashGen() {
@@ -28,25 +34,6 @@ function newSqlDate() {
   return dateToString(new Date());
 }
 // every route in here to be addressed by /api/___
-
-router.post('/tokenLogin', (req, res) => {
-  let tokenHash = req.body['token'];
-
-  dbs.getRecord(dbs.AUTH_TABLE, ['token'], `token='${tokenHash}'`).then(output => {
-    if (output) {
-      // don't send anything, just confirm the token is fine
-      res.writeHead(200);
-      res.send();
-    } else {
-      res.writeHead(401);
-      res.send();
-    }
-  }).catch((err) => {
-    console.log('ERROR when getRecord(): ', err);
-    res.writeHead(401);
-    res.send();
-  });
-});
 
 router.post('/login', (req, res) => {
   let usernameOrEmail = req.body['username'],
@@ -80,15 +67,15 @@ router.post('/login', (req, res) => {
           // run goToDefaultPage() in userContextService
           res.cookie('userToken', tokenHash);
           res.cookie('userId', tokenUserId);
-          res.writeHead(200);
-          res.send();
+          //res.writeHead(200);
+          res.end();
 
         });
       });
     } else {
       // wrong credentials - ask to retry
       res.writeHead(401);
-      res.send();
+      res.end();
     }
   });
 });
@@ -109,35 +96,54 @@ router.post('/register', (req, res) => {
   };
 
   dbs.insertRecord(dbs.USERS_TABLE, insertQuery).then(() => {
-    res.writeHead(200);
-    res.send();
+    //res.writeHead(200);
+    res.end();
   });
 });
 
 // NOTE: from now on verification is done via cookies, request.cookies['userToken'] to be used for verification
 // this is a wrapper function for all this, it does all the verification
+// fixme: reject() is causing the server to crash, even though i am seemingly catching it, it's weird but for now prevented through on('unhandledException') being overwritten with just a console.log
 function verifyRequest(req, res) {
   return new Promise((accept, reject) => {
+    console.log('started verification');
     let respondUnauthorized = () => {
+      console.log('responding unauthorized');
       res.writeHead(401, 'Token invalid or expired');
-      res.send({message: 'Token invalid or expired'});
-      reject();
+      res.end();
+      console.log('rejecting promise')
+      reject('Rejected unauthorized token');
     }
+
+    console.log('cookies:', req.cookies);
 
     let incomingToken = req.cookies['userToken'];
     if (incomingToken) {
-      dbs.getRecord(dbs.AUTH_TABLE, ['userId', 'expiry'], `token='${incomingToken}`).then(output => {
+      console.log('token present');
+      dbs.getRecord(dbs.AUTH_TABLE, ['userId', 'expiry'], `token='${incomingToken}'`).then(output => {
         if (output?.expiry && ( stringToDate(output.expiry) > new Date() )) {
+          console.log('verified successfully');
           accept(output.userId);
         } else {
+          console.log('verification expired');
           respondUnauthorized();
         }
-      });
+      }).catch();
     } else {
+      console.log('token not found');
       respondUnauthorized();
     }
-  });
+  }).catch(err => console.log('caught error:', err));
 }
+
+router.post('/validateSession', (req, res) => {
+  console.log('BEFORE VERIFICATION')
+  verifyRequest(req, res).then(() => {
+    console.log('AFTER VERIFICATION - ACCEPTED')
+    //res.writeHead(200);
+    res.end();
+  }, () => console.log('AFTER VERIFICATION - REJECTED'));
+});
 
 // for now, we will be using standard node's responses instead of sockets,
 // since it turns out .write() actually sends data to client as soon as it is called
@@ -192,12 +198,12 @@ router.post('/sendMessage', (req, res) => {
 
           broadcastMessage(messageChatId, messageInsertionQuery);
 
-          res.writeHead(200); // sent to and received by the server
-          res.send();
+          //res.writeHead(200); // sent to and received by the server
+          res.end();
         });
       } else {
-        res.writeHead(401);
-        res.send({message: 'User is not a member of this chat'});
+        res.writeHead(401, 'User is not a member of this chat');
+        res.end();
       }
     });
   });
@@ -226,7 +232,7 @@ router.post('/fetchMessages', (req, res) => {
         requestedOutput = [output];
       }
 
-      res.writeHead(200);
+      //res.writeHead(200);
       res.send(requestedOutput);
 
     });
@@ -244,11 +250,11 @@ router.post('/getChatName', (req, res) => {
   let checkedId = req.body['id'];
   dbs.getRecord(dbs.CHATS_TABLE, ['chatName'], `id=${checkedId}`).then((output) => {
     if (output?.chatName) {
-      res.writeHead(200);
+      //res.writeHead(200);
       res.send(output.chatName);
     } else {
       res.writeHead(300, 'This id does not exist!');
-      res.send();
+      res.end();
     }
   });
 });
@@ -256,12 +262,18 @@ router.post('/getChatName', (req, res) => {
 // /joinChat - works on OPEN chats, doesn't on PRIVATE
 // /inviteToChat - works on
 router.post('/fetchChats', (req, res) => {
+  console.log('fetchChats requested!');
   verifyRequest(req, res).then(userId => {
-    dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['chatId'], `userId=${userId}`, 500).then(output => {
-      res.writeHead(200);
-      res.send(output);
+    console.log('verified user: ' + userId);
+    dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['chatId'], `userId='${userId}'`, 500).then(output => {
+      //res.writeHead(200);
+      if (output) {
+        res.send(output);
+      } else {
+        res.end();
+      }
     });
-  });
+  }, () => console.log('FAILURE CAUGHT'));
 });
 
 router.post('/createChat', (req, res) => {
@@ -284,6 +296,7 @@ router.post('/createChat', (req, res) => {
       }
       dbs.insertRecord(dbs.CHAT_LINKS_TABLE, chatLinkInsertion).then(output => {
         res.writeHead(200, 'New chat created successfully!');
+        res.end();
       });
     });
   });
@@ -294,7 +307,7 @@ router.post('/joinChat', (req, res) => {
     let chatId = req.body['chatId'];
 
     // If chat is public, just add user, if private, check for an invitation
-    dbs.getRecord(dbs.CHATS_TABLE, ['isPublic'], `id=${chatId}`).then(output => {
+    dbs.getRecord(dbs.CHATS_TABLE, ['isPublic'], `id='${chatId}'`).then(output => {
       // todo: types may need fixing here, test it again when the system will be up
       let finalizeInsertion = () => {
         let chatMemberInsertion = {
@@ -304,7 +317,7 @@ router.post('/joinChat', (req, res) => {
         }
         dbs.insertRecord(dbs.CHAT_LINKS_TABLE, chatMemberInsertion).then(output => {
           res.writeHead(200, 'Successfully joined chat!');
-          res.send();
+          res.end();
         });
       }
 
@@ -312,12 +325,12 @@ router.post('/joinChat', (req, res) => {
         finalizeInsertion();
       } else {
         // if private, check if user was invited
-        dbs.getRecord(dbs.CHAT_INVITATIONS_TABLE, ['id'], `userId=${userId} AND chatId=${chatId}`).then(output => {
+        dbs.getRecord(dbs.CHAT_INVITATIONS_TABLE, ['id'], `userId='${userId}' AND chatId='${chatId}'`).then(output => {
           if (output) {
             finalizeInsertion();
           } else {
             res.writeHead(301, 'This server is private or does not exist!');
-            res.send();
+            res.end();
           }
         });
       }
@@ -332,7 +345,7 @@ router.post('/inviteToChat', (req, res) => {
         chatId = req.body['chatId']
 
     // check if user is a member of this server
-    dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `userId=${userId} AND chatId=${chatId}`).then(output => {
+    dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `userId='${userId}' AND chatId='${chatId}'`).then(output => {
       if (output) {
         let invitationInsertion = {
           dateCreated: newSqlDate(),
@@ -342,11 +355,11 @@ router.post('/inviteToChat', (req, res) => {
         }
         dbs.insertRecord(dbs.CHAT_INVITATIONS_TABLE, invitationInsertion).then(output => {
           res.writeHead(200, 'Successfully invited user to this server!');
-          res.send();
+          res.end();
         });
       } else {
         res.writeHead(301, 'You are not allowed to do that!');
-        res.send();
+        res.end();
       }
     });
   });
@@ -354,20 +367,22 @@ router.post('/inviteToChat', (req, res) => {
 
 router.post('/getUsername', (req, res) => {
   let checkedId = req.body['id'];
-  dbs.getRecord(dbs.USERS_TABLE, ['username'], `id=${checkedId}`).then((output) => {
+  dbs.getRecord(dbs.USERS_TABLE, ['username'], `id='${checkedId}'`).then((output) => {
     if (output?.username) {
-      res.writeHead(200);
+      //res.writeHead(200);
       res.send(output.username);
     } else {
       res.writeHead(300, 'This id does not exist!');
-      res.send();
+      res.end();
     }
   });
 });
 
 // Friend status in future will grant some privileges, like allowing for private messages or adding to group without asking
-router.get('/fetchFriends', (req, res) => {
+router.post('/fetchFriends', (req, res) => {
+  console.log('fetchFriends requested!');
   verifyRequest(req, res).then(userId => {
+    console.log('verified user: ' + userId);
     let getFriendId = (outputObject) => {
       if (outputObject['userIdFirst'] === userId) {
         return outputObject['userIdSecond'];
@@ -377,7 +392,7 @@ router.get('/fetchFriends', (req, res) => {
     }
 
     // limit is arbitrary, add pagination
-    dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['userIdFirst', 'userIdSecond'], `(userIdFirst=${userId} OR userIdSecond=${userId}) AND isActive=1`, 500, 'dateCreated').then(output => {
+    dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['userIdFirst', 'userIdSecond'], `(userIdFirst='${userId}' OR userIdSecond='${userId}') AND isActive=1`, 500, 'dateCreated').then(output => {
       let friendsList = [];
 
       if (output) {
@@ -386,7 +401,7 @@ router.get('/fetchFriends', (req, res) => {
         });
       }
 
-      res.writeHead(200);
+      //res.writeHead(200);
       res.send(friendsList);
 
     });
@@ -403,36 +418,36 @@ router.post('/addFriend', (req, res) => {
     };
 
     // check if the recipient already tried to add the requester as a friend
-    dbs.getRecord(dbs.FRIEND_REQUESTS_TABLE, ['id'], `userIdRequester=${friendId} AND userIdRecipient=${userId}`).then(output => {
+    dbs.getRecord(dbs.FRIEND_REQUESTS_TABLE, ['id'], `userIdRequester='${friendId}' AND userIdRecipient='${userId}'`).then(output => {
       if (output) {
         // pending friend request accepted & deleted
-        dbs.deleteRecord(dbs.FRIEND_REQUESTS_TABLE, `userIdRequester=${friendId} AND userIdRecipient=${userId}`).then(x => {
+        dbs.deleteRecord(dbs.FRIEND_REQUESTS_TABLE, `userIdRequester='${friendId}' AND userIdRecipient='${userId}'`).then(x => {
           res.writeHead(200, 'Friend added.');
-          res.send();
+          res.end();
         });
       } else {
         // make sure these aren't already friends
-        dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['isActive'], `(userIdFirst=${userId} AND userIdSecond=${friendId}) OR (userIdFirst=${friendId} AND userIdSecond=${userId})`).then(exitingFriendsRecord => {
+        dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['isActive'], `(userIdFirst='${userId}' AND userIdSecond='${friendId}') OR (userIdFirst='${friendId}' AND userIdSecond='${userId}')`).then(exitingFriendsRecord => {
           if (exitingFriendsRecord) {
             // reactivate the connection if not active yet
             if (String(exitingFriendsRecord.isActive) === '0') {
               let updateQuery = {
                 isActive: 1,
               }
-              dbs.updateRecord(dbs.FRIEND_LINKS_TABLE, updateQuery, `(userIdFirst=${userId} AND userIdSecond=${friendId}) OR (userIdFirst=${friendId} AND userIdSecond=${userId})`).then(output => {
+              dbs.updateRecord(dbs.FRIEND_LINKS_TABLE, updateQuery, `(userIdFirst='${userId}' AND userIdSecond='${friendId}') OR (userIdFirst='${friendId}' AND userIdSecond='${userId}')`).then(output => {
                 res.writeHead(200, 'Friend added.');
-                res.send();
+                res.end();
               });
             } else {
               // friend link just exists already and is already active, invalid request
               res.writeHead(300, 'Already added this friend!');
-              res.send();
+              res.end();
             }
           } else {
             // send a friend request
             dbs.insertRecord(dbs.FRIEND_REQUESTS_TABLE, friendRequestInsertion).then(x => {
               res.writeHead(200, 'Request sent.');
-              res.send();
+              res.end();
             });
           }
         });
@@ -450,9 +465,9 @@ router.post('/removeFriend', (req, res) => {
     let updateQuery = {
       isActive: 0,
     }
-    dbs.updateRecord(dbs.FRIEND_LINKS_TABLE, updateQuery, `(userIdFirst=${userId} AND userIdSecond=${friendId}) OR (userIdFirst=${friendId} AND userIdSecond=${userId})`).then(output => {
-      res.writeHead(200);
-      res.send();
+    dbs.updateRecord(dbs.FRIEND_LINKS_TABLE, updateQuery, `(userIdFirst='${userId}' AND userIdSecond='${friendId}') OR (userIdFirst='${friendId}' AND userIdSecond='${userId}')`).then(output => {
+      //res.writeHead(200);
+      res.end();
     });
   });
 });

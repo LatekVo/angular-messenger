@@ -15,13 +15,14 @@ export class UserContextService {
   storedUserToken = new BehaviorSubject(localStorage.getItem(lsk.USER_TOKEN));
 
   checkForCookies() {
-    // in case of recent login, parse all received cookies and move the data to localStorage
+
+    // user token is initially transferred into local storage, but after it's verification, it has to be copied back to the cookie for http communication purposes
     let cookieUserToken = this.cookieService.getCookie(lsk.USER_TOKEN)
     if (cookieUserToken) {
       console.log('Cookie Found: USER_TOKEN');
       localStorage.setItem(lsk.USER_TOKEN, cookieUserToken);
       this.storedUserToken.next(cookieUserToken);
-      this.cookieService.deleteCookie(lsk.USER_TOKEN);
+      //this.cookieService.deleteCookie(lsk.USER_TOKEN);
     }
     let cookieUserId = this.cookieService.getCookie(lsk.USER_ID)
     if (cookieUserId) {
@@ -36,9 +37,9 @@ export class UserContextService {
     console.log('Stored values:', this.storedUserToken.value, this.storedUserId.value);
     if (this.storedUserToken.value != null && this.storedUserId.value != null) {
       console.log('INFO: credentials present, attempting automatic login');
-      // unverified token present
-      this.http.post('/api/tokenLogin', {token: this.storedUserToken.value}, {observe: "response"}).subscribe(response => {
+      this.http.post('/api/validateSession', {}, {observe: "response"}).subscribe(response => {
         if (response.status === 200) {
+          this.cookieService.setCookie('userToken', String(this.storedUserToken.value)); // session-long, ensures that if this cookie is invalid, it does not persist
           console.log('INFO: logged in with stored credentials');
           // login succeeded
           if (this.router.url === '/login') {
@@ -54,7 +55,7 @@ export class UserContextService {
         }
       });
     } else {
-      // no token present
+      // no token present - new device
       this.router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
     }
 
