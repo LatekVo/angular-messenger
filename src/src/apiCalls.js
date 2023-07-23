@@ -8,12 +8,7 @@ const PAGE_URL = 'localhost:3000';
 
 let hashCost = 12; // todo: this value can be changed without harming anything, but should get tuned for ~150ms per hash comparison
 
-// fixme: important note: .send() actually adds headers, and since double-adding headers throws an error, it cannot be used with .writeHead()
-// permanent debugging bit, it will only potentially log on errors that would have crashed the server if it wasn't for this piece of code
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise);
-});
-
+// note: it's a little misleading, in Promise, onRejection actually means onError, when a rejection is caught, the onRejection cb will not be executed at all.
 
 // ~4.5 * 10^15 combinations
 function hashGen() {
@@ -103,23 +98,17 @@ router.post('/register', (req, res) => {
 
 // NOTE: from now on verification is done via cookies, request.cookies['userToken'] to be used for verification
 // this is a wrapper function for all this, it does all the verification
-// fixme: reject() is causing the server to crash, even though i am seemingly catching it, it's weird but for now prevented through on('unhandledException') being overwritten with just a console.log
 function verifyRequest(req, res) {
   return new Promise((accept, reject) => {
     console.log('started verification');
     let respondUnauthorized = () => {
-      console.log('responding unauthorized');
       res.writeHead(401, 'Token invalid or expired');
       res.end();
-      console.log('rejecting promise')
       reject('Rejected unauthorized token');
     }
 
-    console.log('cookies:', req.cookies);
-
     let incomingToken = req.cookies['userToken'];
     if (incomingToken) {
-      console.log('token present');
       dbs.getRecord(dbs.AUTH_TABLE, ['userId', 'expiry'], `token='${incomingToken}'`).then(output => {
         if (output?.expiry && ( stringToDate(output.expiry) > new Date() )) {
           console.log('verified successfully');
@@ -133,16 +122,14 @@ function verifyRequest(req, res) {
       console.log('token not found');
       respondUnauthorized();
     }
-  }).catch(err => console.log('caught error:', err));
+  });
 }
 
 router.post('/validateSession', (req, res) => {
-  console.log('BEFORE VERIFICATION')
   verifyRequest(req, res).then(() => {
-    console.log('AFTER VERIFICATION - ACCEPTED')
     //res.writeHead(200);
     res.end();
-  }, () => console.log('AFTER VERIFICATION - REJECTED'));
+  }, () => {});
 });
 
 // for now, we will be using standard node's responses instead of sockets,
@@ -206,7 +193,7 @@ router.post('/sendMessage', (req, res) => {
         res.end();
       }
     });
-  });
+  }, () => {});
 });
 
 router.post('/fetchMessages', (req, res) => {
@@ -223,7 +210,6 @@ router.post('/fetchMessages', (req, res) => {
 
     dbs.getRecord(dbs.MESSAGES_TABLE, ['id', 'dateCreated', 'userId', 'content'], `chatId=${chatId} AND userId=${userId}`, recordTo, 'dateCreated').then(output => {
       let requestedOutput = null;
-      console.log('OUTPUT:', output);
       if (Array.isArray(output)) {
         // webstorm is so incredibly advanced, it already knows that this branch can only be run after output is determined to be an array, and so it automatically highlights output as an array, but only inside this branch.
         requestedOutput = output.slice(recordFrom, recordTo); // this function is smart enough no additional checks are required
@@ -236,7 +222,7 @@ router.post('/fetchMessages', (req, res) => {
       res.send(requestedOutput);
 
     });
-  });
+  }, () => {});
 });
 
 router.post('/streamMessages', (req, res) => {
@@ -244,7 +230,7 @@ router.post('/streamMessages', (req, res) => {
     let chatId = req.body['chatId'];
 
     addListenerSocket(chatId, userId, res);
-  });
+  }, () => {});
 });
 router.post('/getChatName', (req, res) => {
   let checkedId = req.body['id'];
@@ -262,9 +248,7 @@ router.post('/getChatName', (req, res) => {
 // /joinChat - works on OPEN chats, doesn't on PRIVATE
 // /inviteToChat - works on
 router.post('/fetchChats', (req, res) => {
-  console.log('fetchChats requested!');
   verifyRequest(req, res).then(userId => {
-    console.log('verified user: ' + userId);
     dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['chatId'], `userId='${userId}'`, 500).then(output => {
       //res.writeHead(200);
       if (output) {
@@ -273,7 +257,7 @@ router.post('/fetchChats', (req, res) => {
         res.end();
       }
     });
-  }, () => console.log('FAILURE CAUGHT'));
+  }, () => {});
 });
 
 router.post('/createChat', (req, res) => {
@@ -299,7 +283,7 @@ router.post('/createChat', (req, res) => {
         res.end();
       });
     });
-  });
+  }, () => {});
 });
 
 router.post('/joinChat', (req, res) => {
@@ -335,7 +319,7 @@ router.post('/joinChat', (req, res) => {
         });
       }
     });
-  });
+  }, () => {});
 });
 
 router.post('/inviteToChat', (req, res) => {
@@ -362,7 +346,7 @@ router.post('/inviteToChat', (req, res) => {
         res.end();
       }
     });
-  });
+  }, () => {});
 });
 
 router.post('/getUsername', (req, res) => {
@@ -380,9 +364,7 @@ router.post('/getUsername', (req, res) => {
 
 // Friend status in future will grant some privileges, like allowing for private messages or adding to group without asking
 router.post('/fetchFriends', (req, res) => {
-  console.log('fetchFriends requested!');
   verifyRequest(req, res).then(userId => {
-    console.log('verified user: ' + userId);
     let getFriendId = (outputObject) => {
       if (outputObject['userIdFirst'] === userId) {
         return outputObject['userIdSecond'];
@@ -405,7 +387,7 @@ router.post('/fetchFriends', (req, res) => {
       res.send(friendsList);
 
     });
-  });
+  }, () => {});
 });
 router.post('/addFriend', (req, res) => {
   verifyRequest(req, res).then(userId => {
@@ -453,7 +435,7 @@ router.post('/addFriend', (req, res) => {
         });
       }
     });
-  });
+  }, () => {});
 });
 
 // fixme: i disabled friend deletion because of how db works, in summary, deleting friendship will create zombie chats
@@ -469,7 +451,7 @@ router.post('/removeFriend', (req, res) => {
       //res.writeHead(200);
       res.end();
     });
-  });
+  }, () => {});
 });
 
 
