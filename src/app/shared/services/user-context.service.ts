@@ -37,25 +37,26 @@ export class UserContextService {
     console.log('Stored values:', this.storedUserToken.value, this.storedUserId.value);
     if (this.storedUserToken.value != null && this.storedUserId.value != null) {
       console.log('INFO: credentials present, attempting automatic login');
-      this.http.post('/api/validateSession', {}, {observe: "response"}).subscribe(response => {
-        if (response.status === 200) {
-          this.cookieService.setCookie('userToken', String(this.storedUserToken.value)); // session-long, ensures that if this cookie is invalid, it does not persist
-          console.log('INFO: logged in with stored credentials');
-          // login succeeded
-          if (this.router.url === '/login') {
-            this.router.navigate(['/', 'chat']).catch(err => console.log('navigation error: ' + err));
-          }
-        } else {
-          console.log('INFO: stored token and userId expired, redirecting to login');
-          // token expired
-          localStorage.removeItem(lsk.USER_TOKEN);
-          localStorage.removeItem(lsk.USER_ID);
-
-          this.router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
+      this.http.post('/api/validateSession', {}, {observe: "response"}).subscribe((response) => {
+        console.log('validated session:' + response.status)
+        this.cookieService.setCookie('userToken', String(this.storedUserToken.value)); // session-long, ensures that if this cookie is invalid, it does not persist
+        console.log('INFO: logged in with stored credentials');
+        // login succeeded
+        if (this.router.url === '/login') {
+          this.router.navigate(['/', 'chat']).catch(err => console.log('navigation error: ' + err));
         }
+      }, (errResponse) => {
+        console.log('validated session:' + errResponse.status)
+        console.log('INFO: stored token and userId expired, redirecting to login');
+        // token expired
+        localStorage.removeItem(lsk.USER_TOKEN);
+        localStorage.removeItem(lsk.USER_ID);
+
+        this.router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
       });
     } else {
       // no token present - new device
+      console.log('no credentials present, navigating to login page')
       this.router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
     }
 
