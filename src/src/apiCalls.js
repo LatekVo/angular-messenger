@@ -45,7 +45,7 @@ router.post('/login', (req, res) => {
       dbs.deleteRecord(dbs.AUTH_TABLE, `userId='${storedUserId}'`).then(() => {
         let tokenHash = hashGen() + hashGen(),
           tokenUserId = storedUserId,
-          tokenExpiryDate = newSqlDate(); // unused for now, but necessary for later
+          tokenExpiryDate = new Date();
 
         tokenExpiryDate.setDate(tokenExpiryDate.getDate()+31); // set the expiry as 1 month into the future
 
@@ -100,7 +100,6 @@ router.post('/register', (req, res) => {
 // this is a wrapper function for all this, it does all the verification
 function verifyRequest(req, res) {
   return new Promise((accept, reject) => {
-    console.log('started verification');
     let respondUnauthorized = () => {
       res.writeHead(401, 'Token invalid or expired');
       res.end();
@@ -111,15 +110,12 @@ function verifyRequest(req, res) {
     if (incomingToken) {
       dbs.getRecord(dbs.AUTH_TABLE, ['userId', 'expiry'], `token='${incomingToken}'`).then(output => {
         if (output?.expiry && ( stringToDate(output.expiry) > new Date() )) {
-          console.log('verified successfully');
           accept(output.userId);
         } else {
-          console.log('verification expired');
           respondUnauthorized();
         }
       }).catch();
     } else {
-      console.log('token not found');
       respondUnauthorized();
     }
   });

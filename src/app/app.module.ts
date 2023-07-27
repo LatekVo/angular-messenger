@@ -7,8 +7,7 @@ import { AppComponent } from './app.component';
 import { ChatInterfaceComponent } from "./chat-interface/chat-interface.component";
 import { SignInComponent } from "./sign-in/sign-in.component";
 
-import { ChatInterfaceModule } from "./chat-interface/chat-interface.module";
-import { SignInModule } from "./sign-in/sign-in.module";
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 const routes: Routes = [
   { path: 'login', component: SignInComponent },
@@ -24,6 +23,7 @@ const routes: Routes = [
     BrowserModule,
     HttpClientModule,
     RouterModule.forRoot(routes),
+    BrowserAnimationsModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

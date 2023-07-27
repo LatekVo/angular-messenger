@@ -1,0 +1,12 @@
+.error {
+  background-color: var(--infobox-error);
+  border-color: var(--infobox-error-accent);
+}
+.ok {
+  background-color: var(--infobox-ok);
+  border-color: var(--infobox-ok-accent);
+}
+.info {
+  background-color: var(--infobox-info);
+  border-color: var(--infobox-info-accent);
+}

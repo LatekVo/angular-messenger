@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 
 import { PersonNameOrSurnamePipe } from './pipes/person-name-or-surname.pipe';
 import { FormsModule } from "@angular/forms";
+import { NotificationSnackBarComponent } from './components/notification-snack-bar/notification-snack-bar.component';
 
 @NgModule({
   imports: [
@@ -11,6 +12,7 @@ import { FormsModule } from "@angular/forms";
   ],
   declarations: [
     PersonNameOrSurnamePipe,
+    NotificationSnackBarComponent,
   ],
   exports: [
     PersonNameOrSurnamePipe,

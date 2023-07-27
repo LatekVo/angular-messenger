@@ -9,6 +9,12 @@
   --basecolor-dark: #5e5e5e;
   --basecolor-accent: #ffb45d;
   --basecolor-accent-shadow: #d08f39;
+  --infobox-ok: #6fdc60;
+  --infobox-ok-accent: #3f8138;
+  --infobox-info: #60b1dc;
+  --infobox-info-accent: #35637c;
+  --infobox-error: #dc7d60;
+  --infobox-error-accent: #854b39;
 }
 
 body {
@@ -19,3 +25,6 @@ body {
 
   background-color: var(--basecolor);
 }
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
