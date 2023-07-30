@@ -1,13 +1,13 @@
 
-<input id="friend-search" type="text" placeholder="Browse friends" [(ngModel)]="searchInput">
+<input id="friend-search" type="text" placeholder="Browse chats" [(ngModel)]="searchInput">
 
 <ul id="friend-list">
   <!-- when a friend is added, a chat with them will open as well -->
   <!-- we should get 2 tabs, _Chats_ tab, and _Friends_ tab, for now we will just focus on the chats tab -->
 
-  <li *ngFor="let friend of friendList | personNameOrSurname: searchInput" class="friend-panel">
-    <img src="{{ friend.pfpSourceUrl }}" alt="Profile picture of {{ friend.username }}">
-    <span>{{ friend.username }}</span>
+  <li *ngFor="let chat of chatList | chatName: searchInput" class="friend-panel">
+    <img src="{{ chat.pfpSourceUrl }}">
+    <span>{{ chat.chatName }}</span>
   </li>
 
 
@@ -22,8 +22,8 @@
       <span>Create a group chat</span>
     </div>
     <div class="join-chat-input-box">
-      <input placeholder="Chat name">
-      <button>Create</button>
+      <input [(ngModel)]="newChatName" placeholder="Chat name">
+      <button (click)="createChat(newChatName)">Create</button>
     </div>
 
   </li>
@@ -33,8 +33,8 @@
       <span>Join a group chat</span>
     </div>
     <div class="join-chat-input-box">
-      <input placeholder="Chat ID">
-      <button>Join</button>
+      <input [(ngModel)]="joinChatLink" placeholder="Chat ID">
+      <button (click)="joinChat(joinChatLink)">Join</button>
     </div>
   </li>
 

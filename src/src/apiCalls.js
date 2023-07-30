@@ -3,7 +3,12 @@ const dbs = require('./databaseService');
 const express = require('express');
 const router = express.Router();
 
+const createDOMPurify = require('dompurify');
+const { JSDOM } = require('jsdom'); // simulates a window
+const DOMPurify = createDOMPurify(new JSDOM().window);
+
 const bcrypt = require('bcrypt');
+const {forEach} = require("lodash");
 const PAGE_URL = 'localhost:3000';
 
 let hashCost = 12; // todo: this value can be changed without harming anything, but should get tuned for ~150ms per hash comparison
@@ -35,6 +40,12 @@ router.post('/login', (req, res) => {
       password = req.body['password'];
 
   dbs.getRecord(dbs.USERS_TABLE, ['password', 'id'], `username='${usernameOrEmail}' OR email='${usernameOrEmail}'`).then(output => {
+    if (!output) {
+      res.writeHead(401, 'invalid username or password');
+      res.end();
+      return;
+    }
+
     let storedPasswordHash = output.password;
     let storedUserId = output.id;
 
@@ -62,17 +73,16 @@ router.post('/login', (req, res) => {
           // run goToDefaultPage() in userContextService
           res.cookie('userToken', tokenHash);
           res.cookie('userId', tokenUserId);
-          //res.writeHead(200);
           res.end();
 
         });
       });
     } else {
       // wrong credentials - ask to retry
-      res.writeHead(401);
+      res.writeHead(401, 'invalid username or password');
       res.end();
     }
-  });
+  }).catch();
 });
 
 router.post('/register', (req, res) => {
@@ -91,14 +101,13 @@ router.post('/register', (req, res) => {
   };
 
   dbs.insertRecord(dbs.USERS_TABLE, insertQuery).then(() => {
-    //res.writeHead(200);
     res.end();
   });
 });
 
 // NOTE: from now on verification is done via cookies, request.cookies['userToken'] to be used for verification
 // this is a wrapper function for all this, it does all the verification
-function verifyRequest(req, res) {
+function verifyRequest(req, res, requiredValues = []) {
   return new Promise((accept, reject) => {
     let respondUnauthorized = () => {
       res.writeHead(401, 'Token invalid or expired');
@@ -106,15 +115,33 @@ function verifyRequest(req, res) {
       reject('Rejected unauthorized token');
     }
 
+    // req.body is not a simple map, or any other std js object, so std functions will most likely not work on it as well.
+    let allValuesPresent = true;
+    let allValuesAllowed = true;
+
+    requiredValues.forEach((key) => {
+      let value = req.body[key];
+      if (value === undefined && value !== '')
+        allValuesPresent = false;
+      if (value !== DOMPurify.sanitize(value))
+        allValuesAllowed = false;
+    });
+
     let incomingToken = req.cookies['userToken'];
     if (incomingToken) {
-      dbs.getRecord(dbs.AUTH_TABLE, ['userId', 'expiry'], `token='${incomingToken}'`).then(output => {
-        if (output?.expiry && ( stringToDate(output.expiry) > new Date() )) {
-          accept(output.userId);
-        } else {
-          respondUnauthorized();
-        }
-      }).catch();
+      if (allValuesPresent && allValuesAllowed) {
+        dbs.getRecord(dbs.AUTH_TABLE, ['userId', 'expiry'], `token='${incomingToken}'`).then(output => {
+          if (output?.expiry && ( stringToDate(output.expiry) > new Date() )) {
+            accept(output.userId);
+          } else {
+            respondUnauthorized();
+          }
+        }).catch();
+      } else {
+        res.writeHead(401, 'Request is incomplete or invalid');
+        res.end();
+        reject('Rejected incomplete or invalid request');
+      }
     } else {
       respondUnauthorized();
     }
@@ -123,7 +150,6 @@ function verifyRequest(req, res) {
 
 router.post('/validateSession', (req, res) => {
   verifyRequest(req, res).then(() => {
-    //res.writeHead(200);
     res.end();
   }, () => {});
 });
@@ -181,7 +207,7 @@ router.post('/sendMessage', (req, res) => {
 
           broadcastMessage(messageChatId, messageInsertionQuery);
 
-          //res.writeHead(200); // sent to and received by the server
+           // sent to and received by the server
           res.end();
         });
       } else {
@@ -204,19 +230,16 @@ router.post('/fetchMessages', (req, res) => {
 
     // TODO: put all these string keywords into an enum
 
-    dbs.getRecord(dbs.MESSAGES_TABLE, ['id', 'dateCreated', 'userId', 'content'], `chatId=${chatId} AND userId=${userId}`, recordTo, 'dateCreated').then(output => {
+    dbs.getRecord(dbs.MESSAGES_TABLE, ['id', 'dateCreated', 'userId', 'content'], `chatId='${chatId}' AND userId='${userId}'`, recordTo, 'dateCreated').then(output => {
       let requestedOutput = null;
       if (Array.isArray(output)) {
         // webstorm is so incredibly advanced, it already knows that this branch can only be run after output is determined to be an array, and so it automatically highlights output as an array, but only inside this branch.
         requestedOutput = output.slice(recordFrom, recordTo); // this function is smart enough no additional checks are required
-
       } else if (output) {
         requestedOutput = [output];
       }
-
-      //res.writeHead(200);
-      res.send(requestedOutput);
-
+      // messages: Array
+      res.send({messages: requestedOutput});
     });
   }, () => {});
 });
@@ -229,26 +252,35 @@ router.post('/streamMessages', (req, res) => {
   }, () => {});
 });
 router.post('/getChatName', (req, res) => {
-  let checkedId = req.body['id'];
-  dbs.getRecord(dbs.CHATS_TABLE, ['chatName'], `id=${checkedId}`).then((output) => {
-    if (output?.chatName) {
-      //res.writeHead(200);
-      res.send(output.chatName);
+  verifyRequest(req, res).then(userId => {
+    let checkedId = req.body['chatId'];
+    if (checkedId) {
+      dbs.getRecord(dbs.CHATS_TABLE, ['chatName'], `id='${checkedId}'`).then((output) => {
+        if (output?.chatName) {
+          // chatName: string
+          res.send({chatName: output.chatName});
+        } else {
+          res.writeHead(400, 'This id does not exist!');
+          res.end();
+        }
+      });
     } else {
-      res.writeHead(300, 'This id does not exist!');
+      res.writeHead(400, 'Incomplete request!');
       res.end();
     }
   });
 });
 // Chats schema:
 // /joinChat - works on OPEN chats, doesn't on PRIVATE
-// /inviteToChat - works on
+// /inviteToChat - works on OPEN chats, if they are RESTRICTED, it will add an user to the whitelist, otherwise it'll just send him an invitation.
 router.post('/fetchChats', (req, res) => {
   verifyRequest(req, res).then(userId => {
     dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['chatId'], `userId='${userId}'`, 500).then(output => {
-      //res.writeHead(200);
       if (output) {
-        res.send(output);
+        let rawIdArray = output.map(element => element.chatId);
+
+        // chats: Array
+        res.send({chats: rawIdArray});
       } else {
         res.end();
       }
@@ -256,35 +288,54 @@ router.post('/fetchChats', (req, res) => {
   }, () => {});
 });
 
+// TODO: first, a bunch of verification has to go into this particular input
+// TODO: secondly, there has to be general verification going into every input user provides, i suggest purification at the verifyRequest, check 'DOM purify', or something along these lines
 router.post('/createChat', (req, res) => {
-  verifyRequest(req, res).then(userId => {
+  verifyRequest(req, res, ['chatName']).then(userId => {
     let currentDate = newSqlDate();
+    let chatName = req.body['chatName'].match(/[A-Za-z ]/g)?.join('');
+
+    // this is an exception, and will not be fixed inside verifyRequest
+    // a user could use a string matched by .match() but not by DOMPurify, that's normal (example: ')
+    if (chatName) {
+      // add chat and add self
+      let chatInsertion = {
+        chatName: chatName,
+        isPublic: 0,
+        dateCreated: currentDate,
+        ownerId: userId,
+        isFriendChat: 0,
+        friendLinkId: 'NULL',
+      }
+      dbs.insertRecord(dbs.CHATS_TABLE, chatInsertion).then(chatId => {
+        let chatLinkInsertion = {
+          dateJoined: currentDate,
+          userId: userId,
+          chatId: chatId,
+        }
+        dbs.insertRecord(dbs.CHAT_LINKS_TABLE, chatLinkInsertion).then(output => {
+          // chatId: string
+          res.send({chatId: chatId});
+        });
+      });
+    } else {
+      res.writeHead(401, 'Invalid chat name!');
+      res.end();
+    }
 
     // todo: rate-limit this
 
-    // add chat and add self
-    let chatInsertion = {
-      isPublic: 0,
-      dateCreated: currentDate,
-      ownerId: userId
-    }
-    dbs.insertRecord(dbs.CHATS_TABLE, chatInsertion).then(chatId => {
-      let chatLinkInsertion = {
-        dateJoined: currentDate,
-        userId: userId,
-        chatId: chatId,
-      }
-      dbs.insertRecord(dbs.CHAT_LINKS_TABLE, chatLinkInsertion).then(output => {
-        res.writeHead(200, 'New chat created successfully!');
-        res.end();
-      });
-    });
   }, () => {});
 });
 
 router.post('/joinChat', (req, res) => {
   verifyRequest(req, res).then(userId => {
+
+    // todo: request sends a chat invitation link, not a chatId, fix asap
+
+    // dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['chatId', 'isPublic']);
     let chatId = req.body['chatId'];
+
 
     // If chat is public, just add user, if private, check for an invitation
     dbs.getRecord(dbs.CHATS_TABLE, ['isPublic'], `id='${chatId}'`).then(output => {
@@ -296,8 +347,8 @@ router.post('/joinChat', (req, res) => {
           chatId: chatId
         }
         dbs.insertRecord(dbs.CHAT_LINKS_TABLE, chatMemberInsertion).then(output => {
-          res.writeHead(200, 'Successfully joined chat!');
-          res.end();
+          // chatId: string
+          res.send({chatId: chatId});
         });
       }
 
@@ -349,8 +400,8 @@ router.post('/getUsername', (req, res) => {
   let checkedId = req.body['id'];
   dbs.getRecord(dbs.USERS_TABLE, ['username'], `id='${checkedId}'`).then((output) => {
     if (output?.username) {
-      //res.writeHead(200);
-      res.send(output.username);
+      // username: string
+      res.send({username: output.username});
     } else {
       res.writeHead(300, 'This id does not exist!');
       res.end();
@@ -372,16 +423,13 @@ router.post('/fetchFriends', (req, res) => {
     // limit is arbitrary, add pagination
     dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['userIdFirst', 'userIdSecond'], `(userIdFirst='${userId}' OR userIdSecond='${userId}') AND isActive=1`, 500, 'dateCreated').then(output => {
       let friendsList = [];
-
       if (output) {
         output.forEach(x => {
           friendsList.push(getFriendId(x));
         });
       }
-
-      //res.writeHead(200);
-      res.send(friendsList);
-
+      // friends: Array
+      res.send({friends: friendsList});
     });
   }, () => {});
 });
@@ -444,7 +492,6 @@ router.post('/removeFriend', (req, res) => {
       isActive: 0,
     }
     dbs.updateRecord(dbs.FRIEND_LINKS_TABLE, updateQuery, `(userIdFirst='${userId}' AND userIdSecond='${friendId}') OR (userIdFirst='${friendId}' AND userIdSecond='${userId}')`).then(output => {
-      //res.writeHead(200);
       res.end();
     });
   }, () => {});

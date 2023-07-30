@@ -4,6 +4,7 @@ import {HttpClient} from "@angular/common/http";
 import {BehaviorSubject} from "rxjs";
 import {Router} from "@angular/router";
 import {CookieService} from "./cookie.service";
+import {PopupHandlerService} from "./popup-handler.service";
 
 // TODO: this should have been made in Redux, and will need to be rewritten to Redux in future
 
@@ -15,7 +16,6 @@ export class UserContextService {
   storedUserToken = new BehaviorSubject(localStorage.getItem(lsk.USER_TOKEN));
 
   checkForCookies() {
-
     // user token is initially transferred into local storage, but after it's verification, it has to be copied back to the cookie for http communication purposes
     let cookieUserToken = this.cookieService.getCookie(lsk.USER_TOKEN)
     if (cookieUserToken) {
@@ -37,32 +37,36 @@ export class UserContextService {
     console.log('Stored values:', this.storedUserToken.value, this.storedUserId.value);
     if (this.storedUserToken.value != null && this.storedUserId.value != null) {
       console.log('INFO: credentials present, attempting automatic login');
-      this.http.post('/api/validateSession', {}, {observe: "response"}).subscribe((response) => {
-        console.log('validated session:' + response.status)
-        this.cookieService.setCookie('userToken', String(this.storedUserToken.value)); // session-long, ensures that if this cookie is invalid, it does not persist
-        console.log('INFO: logged in with stored credentials');
-        // login succeeded
-        if (this.router.url === '/login') {
-          this.router.navigate(['/', 'chat']).catch(err => console.log('navigation error: ' + err));
-        }
-      }, (errResponse) => {
-        console.log('validated session:' + errResponse.status)
-        console.log('INFO: stored token and userId expired, redirecting to login');
-        // token expired
-        localStorage.removeItem(lsk.USER_TOKEN);
-        localStorage.removeItem(lsk.USER_ID);
+      this.http.post('/api/validateSession', {}, {observe: "response"}).subscribe({
+        next: (response) => {
+          console.log('validated session:' + response.status);
+          this.cookieService.setCookie('userToken', String(this.storedUserToken.value)); // session-long, ensures that if this cookie is invalid, it does not persist
+          console.log('INFO: logged in with stored credentials');
+          // login succeeded
+          if (this.router.url === '/login') {
+            this.router.navigate(['/', 'chat']).catch(err => console.log('navigation error: ' + err));
+          }
+        },
+        error: (errResponse) => {
+          console.log('validated session:' + errResponse.status)
+          console.log('INFO: stored token and userId expired, redirecting to login');
+          this.popupService.dispatchFromResponse(errResponse);
 
-        this.router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
-      });
+          // token expired
+          localStorage.removeItem(lsk.USER_TOKEN);
+          localStorage.removeItem(lsk.USER_ID);
+
+          this.router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
+      }});
     } else {
       // no token present - new device
-      console.log('no credentials present, navigating to login page')
+      console.log('no credentials present, navigating to login page');
       this.router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
     }
 
   }
 
-  constructor(private http: HttpClient, private router: Router, private cookieService: CookieService) {
+  constructor(private http: HttpClient, private router: Router, private cookieService: CookieService, private popupService: PopupHandlerService) {
     this.checkForCookies();
     this.goToDefaultPage();
   }

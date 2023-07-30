@@ -1,7 +1,9 @@
 import { Component } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import {UserContextService} from "../shared/services/user-context.service"; // used for sending the forms out
+import {UserContextService} from "../shared/services/user-context.service";
+import {tap} from "rxjs";
+import {PopupHandlerService} from "../shared/services/popup-handler.service"; // used for sending the forms out
 
 @Component({
   selector: 'app-sign-in',
@@ -17,7 +19,7 @@ export class SignInComponent {
   loginForm: FormGroup;
   registerForm: FormGroup;
 
-  constructor(private http: HttpClient, private userContextService: UserContextService) {
+  constructor(private http: HttpClient, private userContextService: UserContextService, private popupService: PopupHandlerService) {
     this.registerForm = new FormGroup({
       email: new FormControl('', [Validators.required]),
       username: new FormControl('', [Validators.required, Validators.minLength(3)]),
@@ -34,12 +36,20 @@ export class SignInComponent {
 
   submitRegisterForm() {
     const formData = this.registerForm.value;
-    this.http.post('/api/register', formData, {observe: "response"}).subscribe ({
-      next: response => {
-        console.log('Successful registration!');
-        this.showLoginForm = true;
-      },
-      error: error => console.error('Error!', error)
+    this.http.post('/api/register', formData, {observe: "response"}).pipe(
+      tap({
+        next: response => {
+          console.log('Successful registration!');
+          this.showLoginForm = true;
+        },
+        error: error => console.error('Error!', error)
+      }))
+      .subscribe ({
+        next: response => {
+          console.log('Successful registration!');
+          this.showLoginForm = true;
+        },
+        error: error => console.error('Error!', error)
     });
   }
 
@@ -53,7 +63,10 @@ export class SignInComponent {
         this.userContextService.checkForCookies();
         this.userContextService.goToDefaultPage();
       },
-      error: error => console.error('Error!', error)
+      error: error => {
+        console.error('Error!', error);
+        this.popupService.dispatch('Invalid username or password!', 'error')
+      }
     });
   }
 }

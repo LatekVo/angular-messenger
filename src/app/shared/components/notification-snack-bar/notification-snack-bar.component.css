@@ -1,3 +1,7 @@
+div {
+  border-width: 1px;
+  border-style: solid;
+}
 .error {
   background-color: var(--infobox-error);
   border-color: var(--infobox-error-accent);

@@ -13,7 +13,7 @@ export class PersonNameOrSurnamePipe implements PipeTransform {
 
     searchText = searchText.toLowerCase();
     return peopleSet.filter(person =>
-      person.username?.toLowerCase().includes(searchText)
+      person.username?.toLowerCase().includes(searchText.toLowerCase())
     );
   }
 }
