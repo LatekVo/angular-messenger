@@ -187,13 +187,12 @@ function broadcastMessage(chatId, messageObject) {
 }
 
 router.post('/sendMessage', (req, res) => {
-  verifyRequest(req, res).then(userId => {
+  verifyRequest(req, res, ['content', 'chatId']).then(userId => {
     let messageContent = req.body['content'];
     let messageChatId = req.body['chatId'];
 
-    // todo: chat_links should ONLY contain user-chat connections
-    // todo: add permissions as a separate database table
-    dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `chatId=${messageChatId} AND userId=${userId}`).then(output => {
+    // todo: add permissions as a separate database table: {chatId: string, userId: string, permissionId: string}
+    dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `chatId='${messageChatId}' AND userId='${userId}'`).then(output => {
       // check if the user is a member of requested chat
       if (output?.id) {
         let messageInsertionQuery = {
@@ -206,7 +205,6 @@ router.post('/sendMessage', (req, res) => {
         dbs.insertRecord(dbs.MESSAGES_TABLE, messageInsertionQuery).then(output => {
 
           broadcastMessage(messageChatId, messageInsertionQuery);
-
            // sent to and received by the server
           res.end();
         });
@@ -245,14 +243,14 @@ router.post('/fetchMessages', (req, res) => {
 });
 
 router.post('/streamMessages', (req, res) => {
-  verifyRequest(req, res).then(userId => {
+  verifyRequest(req, res, ['chatId']).then(userId => {
     let chatId = req.body['chatId'];
 
     addListenerSocket(chatId, userId, res);
   }, () => {});
 });
 router.post('/getChatName', (req, res) => {
-  verifyRequest(req, res).then(userId => {
+  verifyRequest(req, res, ['chatId']).then(userId => {
     let checkedId = req.body['chatId'];
     if (checkedId) {
       dbs.getRecord(dbs.CHATS_TABLE, ['chatName'], `id='${checkedId}'`).then((output) => {
@@ -329,7 +327,7 @@ router.post('/createChat', (req, res) => {
 });
 
 router.post('/joinChat', (req, res) => {
-  verifyRequest(req, res).then(userId => {
+  verifyRequest(req, res, ['chatId']).then(userId => {
 
     // todo: request sends a chat invitation link, not a chatId, fix asap
 
@@ -370,9 +368,9 @@ router.post('/joinChat', (req, res) => {
 });
 
 router.post('/inviteToChat', (req, res) => {
-  verifyRequest(req, res).then(userId => {
+  verifyRequest(req, res, ['chatId', 'invitedId']).then(userId => {
     // todo: for now, any member of a server can invite an user, when i add permissions support, only allow 'inviter' perms to invite users
-    let invitedId = req.body['invitedId'],
+    let invitedId = req.body['invitedId'], // do not misread this: it's invitED, as in an invited person
         chatId = req.body['chatId']
 
     // check if user is a member of this server
@@ -434,7 +432,7 @@ router.post('/fetchFriends', (req, res) => {
   }, () => {});
 });
 router.post('/addFriend', (req, res) => {
-  verifyRequest(req, res).then(userId => {
+  verifyRequest(req, res, ['friendId']).then(userId => {
     let friendId = req.body['friendId'];
     let friendRequestInsertion = {
       dateCreated: newSqlDate(),
@@ -481,12 +479,8 @@ router.post('/addFriend', (req, res) => {
     });
   }, () => {});
 });
-
-// fixme: i disabled friend deletion because of how db works, in summary, deleting friendship will create zombie chats
-// todo: change this delete to alter
-// a dirty but much better method would be to have the friendshipId be deterministic: it's always friendOneId + friendTwoId, this way even after deletion and creation it would be much simpler to reattain lost chats.
 router.post('/removeFriend', (req, res) => {
-  verifyRequest(req, res).then(userId => {
+  verifyRequest(req, res, ['friendId']).then(userId => {
     let friendId = req.body['friendId'];
     let updateQuery = {
       isActive: 0,

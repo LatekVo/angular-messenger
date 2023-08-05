@@ -2,6 +2,20 @@
   padding: 10px;
 }
 
+#social-selector {
+  width: 100%;
+}
+
+#social-selector > span {
+  width: 50%;
+  background-color: var(--basecolor-dark);
+}
+
+#social-selector > span .selected {
+  background-color: var(--basecolor-accent);
+  border-bottom: var(--basecolor-accent-shadow);
+}
+
 #friend-search {
 
   width: 85%;

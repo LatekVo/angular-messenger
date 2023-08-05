@@ -5,6 +5,8 @@ import { HttpClient } from "@angular/common/http";
 import { PersonNameOrSurnamePipe } from "../../shared/pipes/person-name-or-surname.pipe";
 import {ChatModel} from "../../shared/models/chatModel";
 import {PopupHandlerService} from "../../shared/services/popup-handler.service";
+import {UserContextService} from "../../shared/services/user-context.service";
+import {ChatContextService} from "../../shared/services/chat-context.service";
 
 @Component({
   selector: 'app-friends-list',
@@ -21,7 +23,7 @@ export class FriendsListComponent implements OnInit {
   newChatName: string = '';
   joinChatLink: string = '';
 
-  constructor(private http: HttpClient, private popupService: PopupHandlerService) {}
+  constructor(private http: HttpClient, private chatService: ChatContextService, private popupService: PopupHandlerService) {}
 
   ngOnInit() {
     // todo: profile pictures: will be hosted on a static get server, with all images being [id].png, this will allow us to add an change images for anything that could be a db object, since ids are unique globally
@@ -66,7 +68,13 @@ export class FriendsListComponent implements OnInit {
     });
   }
 
-  // TODO: add API for fetchFriendList
+  enterChat(event: Event) {
+    // conversion to Element is not essential, my type checker is conflicting with documentation, and type-casting to Element silences the errors
+    let id = (event.currentTarget as Element).id;
+
+    console.log(`selected chat: ${id}`);
+    this.chatService.storedOpenedChatId.next(id);
+  }
 
   fetchFriends(): Observable<string[]> {
     console.log('fetching users');
