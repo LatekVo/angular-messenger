@@ -8,7 +8,8 @@ const { JSDOM } = require('jsdom'); // simulates a window
 const DOMPurify = createDOMPurify(new JSDOM().window);
 
 const bcrypt = require('bcrypt');
-const {forEach} = require("lodash");
+//const {webSocket} = require("rxjs/webSocket");
+
 const PAGE_URL = 'localhost:3000';
 
 let hashCost = 12; // todo: this value can be changed without harming anything, but should get tuned for ~150ms per hash comparison
@@ -120,7 +121,8 @@ function verifyRequest(req, res, requiredValues = []) {
     let allValuesAllowed = true;
 
     requiredValues.forEach((key) => {
-      let value = req.body[key];
+      let value = JSON.stringify(req.body[key]);
+
       if (value === undefined && value !== '')
         allValuesPresent = false;
       if (value !== DOMPurify.sanitize(value))
@@ -165,6 +167,7 @@ router.post('/validateSession', (req, res) => {
 // todo ASAP: transition to websockets, it's the simplest way to make sure offline clients are removed from the list
 // right now it's not as bad anymore, as there will be as many open connections at most as there are users. (earlier, it could go to infinity)
 // TODO: This can be probably actually moved to the SQLITE database, using a type called BLOB, it stores data in it's raw format
+// Map< Map< response > >
 let messageBroadcastingSockets = new Map();
 
 function addListenerSocket(chatId, userId, responseObject) {
@@ -177,13 +180,17 @@ function addListenerSocket(chatId, userId, responseObject) {
     listenerMap[userId] = responseObject; // add or update listening response
   }
 }
-
 function broadcastMessage(chatId, messageObject) {
   let socketList = messageBroadcastingSockets.get(chatId);
-
-  socketList.forEach(res => {
-    res.write(messageObject);
-  });
+  // debug: this part is verified to be working, the problem is probably with the headers
+  if (socketList) {
+    socketList.forEach(res => {
+      console.log(`sending to client: ${JSON.stringify(messageObject)}`);
+      // this format is required by EventSource object to be working.
+      res.write(`event: message\n`);
+      res.write(`data: ${JSON.stringify(messageObject)}\n\n`);
+    });
+  }
 }
 
 router.post('/sendMessage', (req, res) => {
@@ -202,11 +209,15 @@ router.post('/sendMessage', (req, res) => {
           content: messageContent
         };
 
-        dbs.insertRecord(dbs.MESSAGES_TABLE, messageInsertionQuery).then(output => {
-
-          broadcastMessage(messageChatId, messageInsertionQuery);
-           // sent to and received by the server
-          res.end();
+        dbs.insertRecord(dbs.MESSAGES_TABLE, messageInsertionQuery).then(messageId => {
+          let broadCastedMessage = {
+            id: messageId,
+            dateCreated: new Date(),
+            userId: userId,
+            content: messageContent
+          }
+          broadcastMessage(messageChatId, broadCastedMessage);
+          // no res.end(), that would interfere with broadcastMessage
         });
       } else {
         res.writeHead(401, 'User is not a member of this chat');
@@ -217,7 +228,7 @@ router.post('/sendMessage', (req, res) => {
 });
 
 router.post('/fetchMessages', (req, res) => {
-  verifyRequest(req, res).then(userId => {
+  verifyRequest(req, res, ['chatId', 'pagination']).then(userId => {
     let chatId = req.body['chatId'];
     let pagination = req.body['pagination'];
 
@@ -237,15 +248,23 @@ router.post('/fetchMessages', (req, res) => {
         requestedOutput = [output];
       }
       // messages: Array
-      res.send({messages: requestedOutput});
+      res.send({ messages: requestedOutput });
     });
   }, () => {});
 });
 
-router.post('/streamMessages', (req, res) => {
-  verifyRequest(req, res, ['chatId']).then(userId => {
-    let chatId = req.body['chatId'];
+router.get('/streamMessages', (req, res) => {
+  verifyRequest(req, res).then(userId => {
+    let chatId = req.cookies['chatId']; // note: contained in cookie, should work the same but stay vigilant about this
 
+    // streaming headers
+    res.setHeader('Content-Type', 'text/event-stream'); // necessary for EventSource API
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.writeHead(200)
+
+    console.log('registering a listening client:', chatId, userId);
     addListenerSocket(chatId, userId, res);
   }, () => {});
 });

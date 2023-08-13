@@ -19,7 +19,8 @@ const rootPath = path.join(__dirname, '..', 'dist', 'angular-messenger');
 // !!! before launching, remember to ng build, dist doesn't exist without building first, and it's not included in the GitHub repo
 
 // simply setting a static path won't work, due to how angular is compiled
-app.get('*', function(req, res) {
+// every request besides /api/ requests gets served the SPA main page, this explains why get requests never worked for me lol
+app.get(/^(?!\/api).*/, function(req, res) {
   fs.stat(rootPath + req.path, function(err) {
     if (err) {
       res.sendFile("index.html", { root: rootPath });

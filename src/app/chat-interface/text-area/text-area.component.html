@@ -1,6 +1,6 @@
 <ul id="conversation-box">
   <!-- simply draw all the conversations in a list, their class will dictate their styles -->
-  <li *ngFor="let message of messageList" [ngClass]="{'ownMessage': message.writtenByMe, 'message-pack': true}">
+  <li *ngFor="let message of this.chatContextService.storedMessageList.value" [ngClass]="{'ownMessage': message.writtenByMe, 'message-pack': true}">
     <!-- todo to enable image sending, either convert all links to embeds, or add some optional img tag -->
     <div id="sender-name">{{message.senderName}}</div>
     <div id="sender-content">{{message.content}}</div>
