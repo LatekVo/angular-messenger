@@ -1,13 +1,23 @@
+<div id="chat-header-box" *ngIf="this.chatContextService.storedOpenedChatId.value">
+  <img src="{{(this.chatContextService.storedOpenChat | async)?.pfpSourceUrl}}" alt="">
+  <!-- .value cannot be used, as it would be a static reference to a past openChat, the first one that gets open -->
+  <span>{{(this.chatContextService.storedOpenChat | async)?.chatName}}</span>
+</div>
+
 <ul id="conversation-box">
-  <!-- simply draw all the conversations in a list, their class will dictate their styles -->
-  <li *ngFor="let message of this.chatContextService.storedMessageList.value" [ngClass]="{'ownMessage': message.writtenByMe, 'message-pack': true}">
-    <!-- todo to enable image sending, either convert all links to embeds, or add some optional img tag -->
-    <div id="sender-name">{{message.senderName}}</div>
-    <div id="sender-content">{{message.content}}</div>
-  </li>
+  <div *ngIf="!this.chatContextService.storedMessageList.value">
+    Open a chat to start talking.
+  </div>
+  <div *ngIf="this.chatContextService.storedMessageList.value">
+    <li *ngFor="let message of this.chatContextService.storedMessageList.value" [ngClass]="{'ownMessage': message.writtenByMe, 'message-pack': true}">
+      <!-- todo to enable image sending, either convert all links to embeds, or add some optional img tag -->
+      <div id="sender-name">{{message.senderName}}</div>
+      <div id="sender-content">{{message.content}}</div>
+    </li>
+  </div>
 </ul>
 
-<div id="input-box">
+<div id="input-box" *ngIf="this.chatContextService.storedOpenedChatId.value">
   <input id="message-input" [(ngModel)]="messageInput">
   <button id="message-send" (click)="sendMessage()" [disabled]="!messageInput">
     <img src="" alt="Send">

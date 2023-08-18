@@ -212,7 +212,7 @@ router.post('/sendMessage', (req, res) => {
         dbs.insertRecord(dbs.MESSAGES_TABLE, messageInsertionQuery).then(messageId => {
           let broadCastedMessage = {
             id: messageId,
-            dateCreated: new Date(),
+            dateCreated: newSqlDate(), // more readable for now
             userId: userId,
             content: messageContent
           }
@@ -345,40 +345,69 @@ router.post('/createChat', (req, res) => {
   }, () => {});
 });
 
+router.post('/createChatInviteLink', (req, res) => {
+  verifyRequest(req, res, ['chatId']).then(userId => {
+    // 1. user must be on the server referenced
+    // 2. todo: user must provide a role he is promoted to which allows him to create invites (this way the server only has to check if the information provided by the user is true, instead of parsing through every role related to the user)
+    let chatId = req.body['chatId'];
+    dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `chatId='${chatId}' AND userId='${userId}'`).then(output => {
+      if (output?.id) {
+        // todo: re-roll shortId if duplicate or offensive, for now SQLite will throw an error if anything.
+        let inviteInsertionQuery = {
+          shortId: Array.from({ length: 5 }, () => Math.floor(Math.random() * 36).toString(36)).join(''),
+          dateCreated: newSqlDate(),
+          authorId: userId,
+          chatId: chatId,
+        }
+        // if the shortId is somehow duplicate, the error will be caught by now so no way to stop onFulfil's execution
+        dbs.insertRecord(dbs.CHAT_INVITATION_LINKS_TABLE, inviteInsertionQuery).then(() => {
+          // we are sending the whole thing, after the creation of a new server I want to see a popup,
+          // with all this information displayed along with a click-to-copy shortId link
+          res.send(inviteInsertionQuery);
+        }, () => {});
+      }
+    });
+  }, () => {});
+});
+
 router.post('/joinChat', (req, res) => {
   verifyRequest(req, res, ['chatId']).then(userId => {
 
     // todo: request sends a chat invitation link, not a chatId, fix asap
 
     // dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['chatId', 'isPublic']);
-    let chatId = req.body['chatId'];
-
+    let shortId = req.body['chatId']; // this is actually shortId
 
     // If chat is public, just add user, if private, check for an invitation
-    dbs.getRecord(dbs.CHATS_TABLE, ['isPublic'], `id='${chatId}'`).then(output => {
-      // todo: types may need fixing here, test it again when the system will be up
-      let finalizeInsertion = () => {
-        let chatMemberInsertion = {
-          dateJoined: newSqlDate(),
-          userId: userId,
-          chatId: chatId
-        }
-        dbs.insertRecord(dbs.CHAT_LINKS_TABLE, chatMemberInsertion).then(output => {
-          // chatId: string
-          res.send({chatId: chatId});
-        });
-      }
+    dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['chatId'], `shortId='${shortId}'`).then(inviteOutput => {
+      if (inviteOutput) {
+        let chatId = inviteOutput['chatId'];
+        dbs.getRecord(dbs.CHATS_TABLE, ['isPublic'], `id='${chatId}'`).then(chatOutput => {
+          // todo: types may need fixing here, test it again when the system will be up
+          let finalizeInsertion = () => {
+            let chatMemberInsertion = {
+              dateJoined: newSqlDate(),
+              userId: userId,
+              chatId: chatId
+            }
+            dbs.insertRecord(dbs.CHAT_LINKS_TABLE, chatMemberInsertion).then(output => {
+              // chatId: string
+              res.send({chatId: chatId});
+            });
+          }
 
-      if (output?.['isPublic'] === '1') {
-        finalizeInsertion();
-      } else {
-        // if private, check if user was invited
-        dbs.getRecord(dbs.CHAT_INVITATIONS_TABLE, ['id'], `userId='${userId}' AND chatId='${chatId}'`).then(output => {
-          if (output) {
+          if (chatOutput?.['isPublic'] === '1') {
             finalizeInsertion();
           } else {
-            res.writeHead(301, 'This server is private or does not exist!');
-            res.end();
+            // if private, check if user was invited
+            dbs.getRecord(dbs.CHAT_INVITATIONS_TABLE, ['id'], `userId='${userId}' AND chatId='${chatId}'`).then(output => {
+              if (output) {
+                finalizeInsertion();
+              } else {
+                res.writeHead(301, 'This server is private or does not exist!');
+                res.end();
+              }
+            });
           }
         });
       }

@@ -3,20 +3,25 @@ import { BehaviorSubject, map, Observable, Subscription } from "rxjs";
 import { LocalStorageKeys as lsk } from "../enums/local-storage-keys";
 import { HttpClient } from "@angular/common/http";
 import { MessageModel } from "../models/messageModel";
-import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { CookieService } from "./cookie.service";
-import { PopupHandlerService } from "./popup-handler.service"; // needed for message streaming
+import { PopupHandlerService } from "./popup-handler.service";
+import {ChatModel} from "../models/chatModel"; // needed for message streaming
+//import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatContextService {
+  storedOpenChat: BehaviorSubject<ChatModel> = new BehaviorSubject({} as ChatModel);
+  storedChatsList: BehaviorSubject<ChatModel[]> = new BehaviorSubject(new Array<ChatModel>());
   storedOpenedChatId = new BehaviorSubject(localStorage.getItem(lsk.OPENED_CHAT_ID));
   storedMessageList = new BehaviorSubject([] as MessageModel[]);
-  messageStreamSocket: WebSocketSubject<MessageModel> = webSocket('/');
+  //messageStreamSocket: WebSocketSubject<MessageModel> = webSocket('/');
+  messageStream: EventSource = new EventSource('');
   constructor(private http: HttpClient, private cookieService: CookieService, private popupService: PopupHandlerService) {
+    this.messageStream.close();
     let pagination = {
-      batchAmount: 50,
+      batchAmount: 1000, // temporarily high, will have to break it down into chunks later, chunks of 50 to be exact.
       batchIndex: 0,
     }
     // We'll use two protocols, fetchMessages along with a paginator, and then fetchMessageUpdates, which will be a lingering call utilising an observable.
@@ -24,10 +29,19 @@ export class ChatContextService {
     // todo: cache results of fetchMessages, and check for them before sending a new request.
     // todo: sort each received message by whether it's authored by the current user.
     this.storedOpenedChatId.subscribe((newChatId) => {
+
       if (newChatId === null) {
         // popupService.dispatch('Opened a chat with no ID assigned!', 'error')
-        throw new Error('opened a chat with no ID assigned');
+        // this behaviour is to be expected at the startup throw new Error('opened a chat with no ID assigned');
+        return;
       }
+
+      this.storedChatsList.value.forEach((selectedChat, index, array) => {
+        if (selectedChat.chatId === newChatId) {
+          this.storedOpenChat.next(selectedChat);
+        }
+      });
+
       this.http.post<{ messages: MessageModel[] }>('/api/fetchMessages', {chatId: newChatId, pagination: pagination})
         .pipe(map(body => body.messages.reverse()))
         .subscribe((newMessages) => {
@@ -41,8 +55,8 @@ export class ChatContextService {
           // we will be transmitting chatId through cookies, since i wanted to do that anyways to autoload last open chat on login
           cookieService.setCookie('chatId', newChatId);
 
-          let messageStream = new EventSource('/api/streamMessages', { withCredentials: true }); // {withCredentials: true} ensures all cookies are sent
-          messageStream.onmessage = (incomingEvent) => {
+          this.messageStream = new EventSource('/api/streamMessages', { withCredentials: true }); // {withCredentials: true} ensures all cookies are sent
+          this.messageStream.onmessage = (incomingEvent) => {
             console.log(`chat-context: received broadcast:`, incomingEvent.data);
             let message = JSON.parse(incomingEvent.data);
             let currentMessages = this.storedMessageList.value;
@@ -51,6 +65,26 @@ export class ChatContextService {
             // todo: toggle this function if user chooses to scroll up
           }
         });
+    });
+
+    this.http.post<{chats: string[]}>('/api/fetchChats', {})
+    .pipe(map(body => body.chats))
+    .subscribe((rawChatIdList) => {
+      this.storedChatsList.next(rawChatIdList.map((chatId) => {
+        return {
+          chatName: undefined,
+          chatId: chatId,
+          pfpSourceUrl: `${chatId}.png`
+        }
+      }));
+
+      this.storedChatsList.value.forEach((chat) => {
+        this.http.post<{chatName: string}>('/api/getChatName', {chatId: chat.chatId})
+        .pipe(map(body => body.chatName))
+        .subscribe((chatName) => {
+          chat.chatName = chatName;
+        });
+      });
     });
   }
 }

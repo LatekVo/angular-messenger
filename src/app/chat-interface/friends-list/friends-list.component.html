@@ -9,7 +9,7 @@
   <!-- when a friend is added, a chat with them will open as well -->
   <!-- we should get 2 tabs, _Chats_ tab, and _Friends_ tab, for now we will just focus on the chats tab -->
 
-  <li *ngFor="let chat of chatList | chatName: searchInput" class="friend-panel" id="{{chat.chatId}}" (click)="enterChat($event)">
+  <li *ngFor="let chat of this.chatService.storedChatsList.value | chatName: searchInput" class="friend-panel" id="{{chat.chatId}}" (click)="enterChat($event)">
     <img src="{{ chat.pfpSourceUrl }}" alt="">
     <span>{{ chat.chatName }}</span>
   </li>
@@ -29,15 +29,15 @@
       <input [(ngModel)]="newChatName" placeholder="Chat name">
       <button (click)="createChat(newChatName)">Create</button>
     </div>
-
   </li>
+
   <li class="friend-panel">
     <div class="join-chat-text-box">
       <!--img ngSrc="" alt=">" fill="false"-->
       <span>Join a group chat</span>
     </div>
     <div class="join-chat-input-box">
-      <input [(ngModel)]="joinChatLink" placeholder="Chat ID">
+      <input [(ngModel)]="joinChatLink" placeholder="Chat Invitation Link">
       <button (click)="joinChat(joinChatLink)">Join</button>
     </div>
   </li>

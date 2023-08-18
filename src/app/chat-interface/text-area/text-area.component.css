@@ -1,3 +1,36 @@
+#chat-header-box {
+  display: flex;
+  flex-direction: row;
+  background-color: var(--basecolor);
+  padding: 0.5vh 0 0.5vh 0;
+  vertical-align: middle;
+  height: 4vh;
+}
+
+#chat-header-box * {
+  background-color: var(--basecolor-dark);
+  display: inline-block;
+  height: 4vh;
+  border-radius: 4px;
+
+}
+
+#chat-header-box img {
+  aspect-ratio: 1/1;
+}
+
+#chat-header-box span {
+  /*even with default css, this text is floating off it's parent area*/
+  line-height: 4vh;
+
+  width: fit-content;
+  font-size: large;
+  color: white;
+
+  margin-left: 4px;
+  padding: 0 4px 0 4px;
+}
+
 #conversation-box {
   list-style: none;
   color: white;
@@ -7,7 +40,7 @@
   padding: 0 30px 0 30px;
 
   overflow: scroll;
-  height: 82vh;
+  height: 81vh;
 }
 
 .message-pack {
@@ -39,7 +72,7 @@
   position: absolute;
   bottom: 0;
 
-  height: 10vh;
+  height: 6vh;
   width: 100%;
   padding: 10px;
 
@@ -52,13 +85,13 @@
 
 #message-input {
   margin-left: auto;
-  height: 60%;
+  height: 95%;
   width: 90%;
 }
 
 #message-send {
   margin: 0 auto 0 10px;
-  height: 60%;
+  height: 95%;
   aspect-ratio: 1/1;
   background-color: var(--basecolor-accent);
   border: none;

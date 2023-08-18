@@ -7,6 +7,7 @@ import { ChatInterfaceComponent } from './chat-interface.component';
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { PersonNameOrSurnamePipe } from "../shared/pipes/person-name-or-surname.pipe";
 import { SharedModule } from "../shared/shared.module";
+import {MatListModule} from "@angular/material/list";
 
 @NgModule({
   declarations: [
@@ -20,7 +21,8 @@ import { SharedModule } from "../shared/shared.module";
         CommonModule,
         ReactiveFormsModule,
         FormsModule,
-        NgOptimizedImage
+        NgOptimizedImage,
+        MatListModule
     ],
   exports: [
     ChatInterfaceComponent

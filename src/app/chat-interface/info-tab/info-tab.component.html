@@ -1,10 +1,18 @@
-
-<!-- top section: basic conversation info and settings -->
-<div>
-  <img>
-</div>
-
-<!-- bottom section: basic user's info and settings -->
-<div>
-
+<!-- all info will be mushed and gravitated to the center, separated only by empty space -->
+<div id="info-root">
+  <img src="" alt="This server's picture">
+  <div id="info-action-buttons">
+    <!-- These buttons will be dynamic tiles, they will have a fixed width background and unlimited heights to use -->
+    <button (click)="placeholder()"> Change server's picture </button>
+    <button (click)="placeholder()"> Start Call </button>
+    <button (click)="placeholder()"> Invite User </button>
+    <button (click)="placeholder()"> Create new server invite </button>
+    <button (click)="placeholder()"> Server Settings </button>
+  </div>
+  <li id="info-invites-list">
+    <span>U8L13</span>
+    <button (click)="placeholder('U8L13')"> Copy </button>
+    <button (click)="placeholder('U8L13')"> Revoke </button>
+    <button (click)="placeholder('U8L13')"> Details </button> <!-- displays the same popup that is displayed at creation -->
+  </li>
 </div>

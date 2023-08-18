@@ -16,14 +16,13 @@ import {ChatContextService} from "../../shared/services/chat-context.service";
 export class FriendsListComponent implements OnInit {
 
   friendList: PersonModel[] = [];
-  chatList: ChatModel[] = [];
 
   // ngModel values
   searchInput: string = "";
   newChatName: string = '';
   joinChatLink: string = '';
 
-  constructor(private http: HttpClient, private chatService: ChatContextService, private popupService: PopupHandlerService) {}
+  constructor(private http: HttpClient, public chatService: ChatContextService, private popupService: PopupHandlerService) {}
 
   ngOnInit() {
     // todo: profile pictures: will be hosted on a static get server, with all images being [id].png, this will allow us to add an change images for anything that could be a db object, since ids are unique globally
@@ -48,24 +47,6 @@ export class FriendsListComponent implements OnInit {
         });
       });
     });
-
-    this.fetchChats().subscribe((rawChatIdList) => {
-      console.log('chats raw IDs: ', rawChatIdList)
-      this.chatList = rawChatIdList.map((chatId) => {
-        return {
-          chatName: undefined,
-          chatId: chatId,
-          pfpSourceUrl: `${chatId}.png`
-        }
-      });
-
-      this.chatList.forEach((chat, listIndex, listObject) => {
-        // it's weird but for some reason after chat.chatId is sent, while it's supposed to be plain string it's actually outright an object {chatId: string}
-        this.http.post<{chatName: string}>('/api/getChatName', {chatId: chat.chatId}).pipe(map(body => body.chatName)).subscribe((chatName) => {
-          listObject[listIndex].chatName = chatName;
-        });
-      });
-    });
   }
 
   enterChat(event: Event) {
@@ -79,11 +60,6 @@ export class FriendsListComponent implements OnInit {
   fetchFriends(): Observable<string[]> {
     console.log('fetching users');
     return this.http.post<{friends: string[]}>('/api/fetchFriends', {}).pipe(map(body => body.friends));
-  }
-
-  fetchChats(): Observable<string[]> {
-    console.log('fetching chats');
-    return this.http.post<{chats: string[]}>('/api/fetchChats', {}).pipe(map(body => body.chats));
   }
 
   // todo: throttle chat creation, put a limit on users, perhaps max 3 new groups daily, 20 monthly, max 50. To create new ones you have to delete the old ones.

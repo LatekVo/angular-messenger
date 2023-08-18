@@ -103,6 +103,23 @@ CREATE TABLE IF NOT EXISTS chatLinks (
   );
 `, dbErrorCallback);
 
+// global invites, shortId will be the 5 symbol invite link.
+db.run(`
+CREATE TABLE IF NOT EXISTS chatInvitationLinks (
+  id TEXT PRIMARY KEY,
+
+  shortId TEXT,
+  dateCreated DATETIME,
+  authorId TEXT,
+  chatId TEXT,
+
+  UNIQUE(shortId),
+  FOREIGN KEY(authorId) REFERENCES users(id),
+  FOREIGN KEY(chatId) REFERENCES chats(id)
+  );
+`, dbErrorCallback);
+
+// personal invites
 db.run(`
 CREATE TABLE IF NOT EXISTS chatInvitations (
   id TEXT PRIMARY KEY,

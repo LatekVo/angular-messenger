@@ -1,0 +1,13 @@
+#info-root {
+  display: flex;
+  flex-direction: column;
+}
+
+#info-root > * {
+  display: block;
+}
+
+#info-action-buttons {
+  display: flex;
+  flex-direction: row;
+}

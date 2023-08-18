@@ -14,6 +14,7 @@ import { PopupHandlerService } from "../../shared/services/popup-handler.service
   styleUrls: ['./text-area.component.css']
 })
 export class TextAreaComponent implements OnInit {
+  messageList: MessageModel[] = []; // this seems unnecessary, but is an important interface between the behaviour subject and html
   constructor(private http: HttpClient, private popupService: PopupHandlerService, public chatContextService: ChatContextService, private appRef: ApplicationRef, private ngZone: NgZone) {}
 
   ngOnInit() {
@@ -30,7 +31,6 @@ export class TextAreaComponent implements OnInit {
 
     // simply scroll down on new chat id
     this.chatContextService.storedOpenedChatId.subscribe(() => {
-      // fixme: code below is being run when expected, after all of the DOM has been already loaded, yet it does not scroll to the bottom of chat-box
       let element = document.getElementById('conversation-box');
       if (element) {
         element.scrollTop = element.scrollHeight

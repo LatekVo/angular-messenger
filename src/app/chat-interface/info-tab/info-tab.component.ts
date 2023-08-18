@@ -6,5 +6,7 @@ import { Component } from '@angular/core';
   styleUrls: ['./info-tab.component.css']
 })
 export class InfoTabComponent {
+  placeholder(input = 'placeholder') {
 
+  }
 }
