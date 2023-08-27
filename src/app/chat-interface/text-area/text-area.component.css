@@ -47,10 +47,8 @@
   width: fit-content;
 }
 
-.ownMessage {
+.own-message {
   /* todo: align to right */
-  text-align: right;
-  align-self: end;
 }
 
 #sender-name {

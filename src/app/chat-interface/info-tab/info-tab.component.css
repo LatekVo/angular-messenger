@@ -1,13 +1,82 @@
+/* for now these angular components looks completely off, but i will aim to replace everything with them for more uniform look */
 #info-root {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 #info-root > * {
   display: block;
 }
 
+#server-pfp {
+  width: 8vw;
+  aspect-ratio: 1/1;
+  background-color: var(--basecolor-dark);
+  border-radius: 4px;
+  margin: 8px;
+}
+
 #info-action-buttons {
+  width: 90%;
   display: flex;
   flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin: 4px;
+  padding: 4px;
+  border-radius: 4px;
+  background-color: var(--basecolor-dark);
+}
+mat-expansion-panel {
+  margin: 4px;
+  background-color: var(--basecolor);
+  width: 90%;
+}
+
+.list-header {
+  width: 100%;
+  text-align: center;
+  color: white;
+}
+
+mat-list {
+  background-color: var(--basecolor-light);
+  border-radius: 4px;
+  padding: 4px;
+
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+mat-list-item {
+  width: fit-content;
+  margin: 4px;
+  border-radius: 4px;
+  background-color: var(--basecolor-dark);
+}
+
+.invite-text {
+  border-radius: 4px;
+  margin: 4px;
+  padding: 4px;
+  background-color: white;
+  font-family: monospace;
+  font-size: larger;
+}
+
+button {
+  margin: 4px;
+}
+
+/* class created with usage of mat-stroked-button */
+.mat-mdc-outlined-button {
+  background-color: var(--basecolor-light);
+}
+
+/* this class is created when setting color="warn"*/
+.mat-warn {
+  background-color: var(--basecolor-light) !important;
 }

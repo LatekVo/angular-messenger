@@ -1,0 +1,22 @@
+div {
+  padding: 8px;
+  width: 20vw;
+  height: fit-content;
+  background-color: var(--basecolor-light);
+}
+
+mat-list-item {
+  background-color: var(--basecolor-dark);
+  margin: 4px
+}
+
+span {
+  font-family: monospace;
+  font-size: larger;
+  color: black;
+  background-color: white;
+  padding: 4px 8px;
+  width: fit-content;
+  margin-left: 4px;
+  border-radius: 4px;
+}

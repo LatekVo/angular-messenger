@@ -2,13 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpResponse } from "@angular/common/http";
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { NotificationSnackBarComponent } from "../components/notification-snack-bar/notification-snack-bar.component";
+import { MatDialog } from '@angular/material/dialog';
+import { InviteInfoComponent } from "../components/invite-info/invite-info.component";
 
 @Injectable({
   providedIn: 'root'
 })
 export class PopupHandlerService {
 
-  constructor(private snackBar: MatSnackBar) { }
+  constructor(private snackBar: MatSnackBar, private dialog: MatDialog) { }
 
   dispatch(text: string, type: 'ok' | 'info' | 'error') {
     // this feature is usually called a 'snackbar' in Angular documentation.
@@ -28,5 +30,14 @@ export class PopupHandlerService {
         this.dispatch(response.statusText, 'error');
       }
     }
+  }
+
+  // relocated this function to global service, as it will be accessed from friends-list component as well.
+  displayInviteDetails(inviteId: string) {
+    this.dialog.open(InviteInfoComponent, {
+      data: {
+        inviteId: inviteId
+      }
+    });
   }
 }

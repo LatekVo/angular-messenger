@@ -8,6 +8,8 @@ import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { PersonNameOrSurnamePipe } from "../shared/pipes/person-name-or-surname.pipe";
 import { SharedModule } from "../shared/shared.module";
 import {MatListModule} from "@angular/material/list";
+import {MatButtonModule} from "@angular/material/button";
+import {MatExpansionModule} from "@angular/material/expansion";
 
 @NgModule({
   declarations: [
@@ -22,7 +24,9 @@ import {MatListModule} from "@angular/material/list";
         ReactiveFormsModule,
         FormsModule,
         NgOptimizedImage,
-        MatListModule
+        MatListModule,
+        MatButtonModule,
+        MatExpansionModule
     ],
   exports: [
     ChatInterfaceComponent

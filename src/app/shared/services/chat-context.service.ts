@@ -5,7 +5,8 @@ import { HttpClient } from "@angular/common/http";
 import { MessageModel } from "../models/messageModel";
 import { CookieService } from "./cookie.service";
 import { PopupHandlerService } from "./popup-handler.service";
-import {ChatModel} from "../models/chatModel"; // needed for message streaming
+import { ChatModel } from "../models/chatModel";
+import { UserContextService } from "./user-context.service"; // needed for message streaming
 //import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 
 @Injectable({
@@ -18,7 +19,7 @@ export class ChatContextService {
   storedMessageList = new BehaviorSubject([] as MessageModel[]);
   //messageStreamSocket: WebSocketSubject<MessageModel> = webSocket('/');
   messageStream: EventSource = new EventSource('');
-  constructor(private http: HttpClient, private cookieService: CookieService, private popupService: PopupHandlerService) {
+  constructor(private http: HttpClient, private cookieService: CookieService, private popupService: PopupHandlerService, private userContextService: UserContextService) {
     this.messageStream.close();
     let pagination = {
       batchAmount: 1000, // temporarily high, will have to break it down into chunks later, chunks of 50 to be exact.
@@ -43,12 +44,22 @@ export class ChatContextService {
       });
 
       this.http.post<{ messages: MessageModel[] }>('/api/fetchMessages', {chatId: newChatId, pagination: pagination})
-        .pipe(map(body => body.messages.reverse()))
+        .pipe(
+          map(body => body.messages.reverse()),
+          map(messages => {
+              messages.forEach((message) => {
+                if (message.senderId == this.userContextService.storedUserId.value) {
+                  message.writtenByMe = true;
+                }
+              });
+              return messages;
+            }
+          )
+        )
         .subscribe((newMessages) => {
           // ngrx would really come in handy here, for caching all the chats when context is switched.
           // I will have to store different pages separately somehow, will probably set messages per page to a fixed number
           this.storedMessageList.next(newMessages);
-
           // todo: replace this http post req with websockets for bi-communication
           // todo: actually, make a function to send and receive messages all under a single websocket stored in this service.
           // for now though, since sending and loading messages already works great,

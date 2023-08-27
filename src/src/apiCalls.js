@@ -116,17 +116,45 @@ function verifyRequest(req, res, requiredValues = []) {
       reject('Rejected unauthorized token');
     }
 
+    let sanitize = (input) => {
+      // https://stackoverflow.com/questions/2794137/sanitizing-user-input-before-adding-it-to-the-dom-in-javascript
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        "/": '&#x2F;',
+        "`": '&grave;'
+      };
+
+      const reg = /[&<>"'/`]/ig;
+      return String(input).replace(reg, (match)=>(map[match]));
+    }
+
     // req.body is not a simple map, or any other std js object, so std functions will most likely not work on it as well.
     let allValuesPresent = true;
     let allValuesAllowed = true;
 
+    let sanitizeEntity = (object) => {
+      if (typeof object == "object") {
+        Object.values(object).forEach(val => {
+          val = sanitizeEntity(val);
+          return val;
+        });
+      } else {
+        object = sanitize(object);
+      }
+      return object;
+    }
+
     requiredValues.forEach((key) => {
       let value = JSON.stringify(req.body[key]);
-
-      if (value === undefined && value !== '')
+      if (value === undefined && value !== '') {
         allValuesPresent = false;
-      if (value !== DOMPurify.sanitize(value))
-        allValuesAllowed = false;
+      } else {
+        req.body[key] = sanitizeEntity(req.body[key]);
+      }
     });
 
     let incomingToken = req.cookies['userToken'];
@@ -416,6 +444,7 @@ router.post('/joinChat', (req, res) => {
 });
 
 router.post('/inviteToChat', (req, res) => {
+  // IMPORTANT NOTE: this API is intended only for inviting individual people.
   verifyRequest(req, res, ['chatId', 'invitedId']).then(userId => {
     // todo: for now, any member of a server can invite an user, when i add permissions support, only allow 'inviter' perms to invite users
     let invitedId = req.body['invitedId'], // do not misread this: it's invitED, as in an invited person
@@ -439,6 +468,69 @@ router.post('/inviteToChat', (req, res) => {
         res.end();
       }
     });
+  }, () => {});
+});
+
+router.post('/fetchChatInviteLinks', (req, res) => {
+  verifyRequest(req, res, ['chatId']).then(userId => {
+    let chatId = req.body['chatId'];
+    dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['id', 'shortId'], `chatId='${chatId}'`, 20).then(output => {
+      res.send(output);
+    });
+  }, () => {});
+});
+
+router.post('/removeChatInviteLink', (req, res) => {
+  verifyRequest(req, res, ['inviteId']).then(userId => {
+    let inviteId = req.body['inviteId'];
+    // check chatId for given inviteId
+    dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['id', 'chatId'], `userId='${inviteId}`).then(linkOutput => {
+      if (linkOutput) {
+        let chatId = linkOutput.chatId;
+        // check if user is present in said chat
+        dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `userId='${userId}' AND chatId='${chatId}'`).then(chatOutput => {
+          if (chatOutput) {
+            dbs.deleteRecord(dbs.CHAT_INVITATIONS_TABLE, ``).then(output => {
+              res.writeHead(200, 'Successfully invited user to this server!');
+              res.end();
+            });
+          } else {
+            res.writeHead(301, 'You are not allowed to do that!');
+            res.end();
+          }
+        });
+      } else {
+        res.writeHead(301, 'You are not allowed to do that!');
+        res.end();
+      }
+    });
+  }, () => {});
+});
+
+router.post('/getInviteLinkDetails', (req, res) => {
+  verifyRequest(req, res, ['inviteId']).then(userId => {
+    let inviteId = req.body['inviteId'];
+    dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['id', 'shortId', 'dateCreated', 'authorId', 'chatId'], `id='${inviteId}'`).then((output) => {
+      res.send({invite: output})
+    });
+  }, () => {});
+});
+
+router.post('/', (req, res) => {
+  verifyRequest(req, res).then(userId => {
+
+  }, () => {});
+});
+
+router.post('/', (req, res) => {
+  verifyRequest(req, res).then(userId => {
+
+  }, () => {});
+});
+
+router.post('/', (req, res) => {
+  verifyRequest(req, res).then(userId => {
+
   }, () => {});
 });
 

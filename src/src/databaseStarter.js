@@ -132,7 +132,6 @@ CREATE TABLE IF NOT EXISTS chatInvitations (
   FOREIGN KEY(authorId) REFERENCES users(id),
   FOREIGN KEY(userId) REFERENCES users(id),
   FOREIGN KEY(chatId) REFERENCES chats(id)
-
   );
 `, dbErrorCallback);
 

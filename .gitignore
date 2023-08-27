@@ -42,3 +42,6 @@ testem.log
 Thumbs.db
 /src/src/database.sqlite
 package-lock.json
+
+# static is essential but it's contents are private. It's a flat file containing every image associated with a hash
+/src/static/*

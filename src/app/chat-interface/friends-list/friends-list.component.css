@@ -25,7 +25,7 @@
 #social-selector > span.selected {
   font-weight: bold;
   background-color: var(--basecolor-light);
-  border-bottom: none;
+  border: none;
 }
 
 #social-selector > span:not(.selected):hover {
@@ -71,6 +71,12 @@
 
   overflow: hidden;
   position: relative; /* create element anchor */
+}
+
+.friend-panel > img {
+  aspect-ratio: 1/1;
+  height: 100%;
+  background-color: white;
 }
 
 .friend-panel > span {
