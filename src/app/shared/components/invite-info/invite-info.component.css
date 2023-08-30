@@ -7,7 +7,7 @@ div {
 
 mat-list-item {
   background-color: var(--basecolor-dark);
-  margin: 4px
+  margin: 4px 0;
 }
 
 span {

@@ -4,6 +4,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { NotificationSnackBarComponent } from "../components/notification-snack-bar/notification-snack-bar.component";
 import { MatDialog } from '@angular/material/dialog';
 import { InviteInfoComponent } from "../components/invite-info/invite-info.component";
+import {InviteLinkModel} from "../models/inviteLinkModel";
 
 @Injectable({
   providedIn: 'root'
@@ -33,11 +34,15 @@ export class PopupHandlerService {
   }
 
   // relocated this function to global service, as it will be accessed from friends-list component as well.
-  displayInviteDetails(inviteId: string) {
-    this.dialog.open(InviteInfoComponent, {
-      data: {
-        inviteId: inviteId
-      }
-    });
+  displayInviteDetails(invite: string | InviteLinkModel) {
+    if (typeof invite == "string") {
+      this.dialog.open(InviteInfoComponent, {
+        data: { inviteId: invite }
+      });
+    } else {
+      this.dialog.open(InviteInfoComponent, {
+        data: { invite: invite }
+      });
+    }
   }
 }

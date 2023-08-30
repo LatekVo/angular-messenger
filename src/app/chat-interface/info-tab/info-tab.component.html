@@ -14,23 +14,11 @@
       <h3 class="list-header">Invite links for this chat</h3>
     </mat-expansion-panel-header>
     <mat-list>
-      <mat-list-item>
-        <span class="invite-text">U8L13</span>
-        <button mat-flat-button (click)="copyToClipboard('7b32iou2qo53mz2o4')">Copy</button>
-        <button mat-flat-button (click)="displayInvitePopup('7b32iou2qo53mz2o4')">Details</button> <!-- displays the same popup that is displayed at creation -->
-        <button mat-stroked-button class="revoke" color="warn" (click)="revokeInvite('7b32iou2qo53mz2o4')">Revoke</button>
-      </mat-list-item>
-      <mat-list-item>
-        <span class="invite-text">GQ1N8</span>
-        <button mat-flat-button (click)="copyToClipboard('7b32iou2qo53mz2o4')">Copy</button>
-        <button mat-flat-button (click)="displayInvitePopup('7b32iou2qo53mz2o4')">Details</button> <!-- displays the same popup that is displayed at creation -->
-        <button mat-stroked-button class="revoke" color="warn" (click)="revokeInvite('7b32iou2qo53mz2o4')">Revoke</button>
-      </mat-list-item>
-      <mat-list-item>
-        <span class="invite-text">OL7KK</span>
-        <button mat-flat-button (click)="copyToClipboard('7b32iou2qo53mz2o4')">Copy</button>
-        <button mat-flat-button (click)="displayInvitePopup('7b32iou2qo53mz2o4')">Details</button> <!-- displays the same popup that is displayed at creation -->
-        <button mat-stroked-button color="warn" (click)="revokeInvite('7b32iou2qo53mz2o4')">Revoke</button>
+      <mat-list-item *ngFor="let invite of inviteLinkList">
+        <span class="invite-text">{{invite.shortId}}</span>
+        <button mat-flat-button (click)="copyToClipboard(invite.id)">Copy</button>
+        <button mat-flat-button (click)="displayInvitePopup(invite.id)">Details</button> <!-- displays the same popup that is displayed at creation -->
+        <button mat-stroked-button class="revoke" color="warn" (click)="revokeInvite(invite.id)">Revoke</button>
       </mat-list-item>
     </mat-list>
   </mat-expansion-panel>

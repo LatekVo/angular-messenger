@@ -3,6 +3,5 @@ export interface InviteLinkModel {
   shortId: string;
   dateCreated: string;
   authorId: string;
-  userId: string;
   chatId: string;
 }

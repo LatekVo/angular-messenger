@@ -77,7 +77,7 @@ export class FriendsListComponent implements OnInit {
   }
 
   joinChat(chatLink: string): void {
-    this.http.post<{chatId: string}>('/api/joinChat', {chatInvite: chatLink}, {observe: "response"}).subscribe({
+    this.http.post<{chatId: string}>('/api/joinChat', {shortId: chatLink}, {observe: "response"}).subscribe({
       next: (response) => {
         console.log(`joined chat: ${response.body?.chatId}`);
         this.popupService.dispatch('Created chat successfully!', 'ok');

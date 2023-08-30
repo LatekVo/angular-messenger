@@ -12,12 +12,36 @@ import { InviteLinkModel } from "../../models/inviteLinkModel";
 export class InviteInfoComponent {
   // the dialogRef is only a self-reference, main api through dialog.open().
   inviteDetails: InviteLinkModel = {} as InviteLinkModel;
-  constructor(@Inject(MAT_DIALOG_DATA) public data: {inviteId: string}, private http: HttpClient, public dialogRef: MatDialogRef<InviteInfoComponent>) {
-    this.http.post<{ invite: InviteLinkModel }>('/api/getInviteLinkDetails', {inviteId: data.inviteId}).subscribe({
+  inviteIssuerName: string = '';
+  inviteChatName: string = '';
+
+  private fillMissingDetails() {
+    this.http.post<{ username: string }>('/api/getUsername', {id: this.inviteDetails.authorId}).subscribe({
       next: (response) => {
-        this.inviteDetails = response.invite;
+        this.inviteIssuerName = response.username;
       },
       error: () => {}
     });
+    this.http.post<{ chatName: string }>('/api/getChatName', {chatId: this.inviteDetails.chatId}).subscribe({
+      next: (response) => {
+        this.inviteChatName = response.chatName;
+      },
+      error: () => {}
+    });
+  }
+
+  constructor(@Inject(MAT_DIALOG_DATA) public data: {inviteId: string | undefined, invite: InviteLinkModel | undefined}, private http: HttpClient, public dialogRef: MatDialogRef<InviteInfoComponent>) {
+    if (data.invite) {
+      this.inviteDetails = data.invite;
+      this.fillMissingDetails();
+    } else {
+      this.http.post<{ invite: InviteLinkModel }>('/api/getInviteLinkDetails', {inviteId: data.inviteId}).subscribe({
+        next: (response) => {
+          this.inviteDetails = response.invite;
+          this.fillMissingDetails();
+        },
+        error: () => {}
+      });
+    }
   }
 }

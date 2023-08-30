@@ -213,7 +213,7 @@ function broadcastMessage(chatId, messageObject) {
   // debug: this part is verified to be working, the problem is probably with the headers
   if (socketList) {
     socketList.forEach(res => {
-      console.log(`sending to client: ${JSON.stringify(messageObject)}`);
+      // console.log(`sending to client: ${JSON.stringify(messageObject)}`);
       // this format is required by EventSource object to be working.
       res.write(`event: message\n`);
       res.write(`data: ${JSON.stringify(messageObject)}\n\n`);
@@ -313,7 +313,7 @@ router.post('/getChatName', (req, res) => {
       res.writeHead(400, 'Incomplete request!');
       res.end();
     }
-  });
+  }, () => {});
 });
 // Chats schema:
 // /joinChat - works on OPEN chats, doesn't on PRIVATE
@@ -388,9 +388,10 @@ router.post('/createChatInviteLink', (req, res) => {
           chatId: chatId,
         }
         // if the shortId is somehow duplicate, the error will be caught by now so no way to stop onFulfil's execution
-        dbs.insertRecord(dbs.CHAT_INVITATION_LINKS_TABLE, inviteInsertionQuery).then(() => {
+        dbs.insertRecord(dbs.CHAT_INVITATION_LINKS_TABLE, inviteInsertionQuery).then((inviteId) => {
           // we are sending the whole thing, after the creation of a new server I want to see a popup,
           // with all this information displayed along with a click-to-copy shortId link
+          inviteInsertionQuery.id = inviteId;
           res.send(inviteInsertionQuery);
         }, () => {});
       }
@@ -399,12 +400,12 @@ router.post('/createChatInviteLink', (req, res) => {
 });
 
 router.post('/joinChat', (req, res) => {
-  verifyRequest(req, res, ['chatId']).then(userId => {
+  verifyRequest(req, res, ['shortId']).then(userId => {
 
     // todo: request sends a chat invitation link, not a chatId, fix asap
 
     // dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['chatId', 'isPublic']);
-    let shortId = req.body['chatId']; // this is actually shortId
+    let shortId = req.body['shortId']; // this is actually shortId
 
     // If chat is public, just add user, if private, check for an invitation
     dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['chatId'], `shortId='${shortId}'`).then(inviteOutput => {
@@ -475,7 +476,7 @@ router.post('/fetchChatInviteLinks', (req, res) => {
   verifyRequest(req, res, ['chatId']).then(userId => {
     let chatId = req.body['chatId'];
     dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['id', 'shortId'], `chatId='${chatId}'`, 20).then(output => {
-      res.send(output);
+      res.send({ inviteLinkList: output });
     });
   }, () => {});
 });
@@ -483,15 +484,15 @@ router.post('/fetchChatInviteLinks', (req, res) => {
 router.post('/removeChatInviteLink', (req, res) => {
   verifyRequest(req, res, ['inviteId']).then(userId => {
     let inviteId = req.body['inviteId'];
-    // check chatId for given inviteId
-    dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['id', 'chatId'], `userId='${inviteId}`).then(linkOutput => {
+    // check the chat of presented invite
+    dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['id', 'chatId'], `id='${inviteId}'`).then(linkOutput => {
       if (linkOutput) {
         let chatId = linkOutput.chatId;
         // check if user is present in said chat
         dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `userId='${userId}' AND chatId='${chatId}'`).then(chatOutput => {
           if (chatOutput) {
-            dbs.deleteRecord(dbs.CHAT_INVITATIONS_TABLE, ``).then(output => {
-              res.writeHead(200, 'Successfully invited user to this server!');
+            dbs.deleteRecord(dbs.CHAT_INVITATION_LINKS_TABLE, `id='${inviteId}'`).then(output => {
+              res.writeHead(200, 'Successfully removed invite link!');
               res.end();
             });
           } else {
@@ -535,16 +536,18 @@ router.post('/', (req, res) => {
 });
 
 router.post('/getUsername', (req, res) => {
-  let checkedId = req.body['id'];
-  dbs.getRecord(dbs.USERS_TABLE, ['username'], `id='${checkedId}'`).then((output) => {
-    if (output?.username) {
-      // username: string
-      res.send({username: output.username});
-    } else {
-      res.writeHead(300, 'This id does not exist!');
-      res.end();
-    }
-  });
+  verifyRequest(req, res, ['id']).then(userId => {
+    let checkedId = req.body['id'];
+    dbs.getRecord(dbs.USERS_TABLE, ['username'], `id='${checkedId}'`).then((output) => {
+      if (output?.username) {
+        // username: string
+        res.send({username: output.username});
+      } else {
+        res.writeHead(300, 'This id does not exist!');
+        res.end();
+      }
+    });
+  }, () => {});
 });
 
 // Friend status in future will grant some privileges, like allowing for private messages or adding to group without asking
