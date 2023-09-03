@@ -58,7 +58,20 @@ mat-list-item {
   background-color: var(--basecolor-dark);
 }
 
-.invite-text {
+.alignment-wrapper {
+  display: flex;
+}
+
+.list-item-img {
+  height: 1.7em;
+  aspect-ratio: 1 / 1;
+  margin: 4px;
+  background-color: white;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.list-item-text {
   border-radius: 4px;
   margin: 4px;
   padding: 4px;

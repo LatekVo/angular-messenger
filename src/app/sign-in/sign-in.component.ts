@@ -3,7 +3,8 @@ import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import {UserContextService} from "../shared/services/user-context.service";
 import {tap} from "rxjs";
-import {PopupHandlerService} from "../shared/services/popup-handler.service"; // used for sending the forms out
+import {PopupHandlerService} from "../shared/services/popup-handler.service";
+import {ChatContextService} from "../shared/services/chat-context.service"; // used for sending the forms out
 
 @Component({
   selector: 'app-sign-in',
@@ -19,7 +20,7 @@ export class SignInComponent {
   loginForm: FormGroup;
   registerForm: FormGroup;
 
-  constructor(private http: HttpClient, private userContextService: UserContextService, private popupService: PopupHandlerService) {
+  constructor(private http: HttpClient, private userContextService: UserContextService, private popupService: PopupHandlerService, private chatContextService: ChatContextService) {
     this.registerForm = new FormGroup({
       email: new FormControl('', [Validators.required]),
       username: new FormControl('', [Validators.required, Validators.minLength(3)]),
@@ -62,6 +63,7 @@ export class SignInComponent {
         console.log('Successful login!');
         this.userContextService.checkForCookies();
         this.userContextService.goToDefaultPage();
+        this.chatContextService.updateChatList();
       },
       error: error => {
         console.error('Error!', error);

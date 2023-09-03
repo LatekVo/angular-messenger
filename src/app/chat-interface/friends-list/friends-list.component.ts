@@ -68,6 +68,7 @@ export class FriendsListComponent implements OnInit {
       next: (response) => {
         console.log(`created new chat: ${response.body?.chatId}`);
         this.popupService.dispatch('Created chat successfully!', 'ok');
+        this.chatService.updateChatList();
       },
       error: (response) => {
         console.log(`couldn't create chat: `, response);
@@ -80,7 +81,8 @@ export class FriendsListComponent implements OnInit {
     this.http.post<{chatId: string}>('/api/joinChat', {shortId: chatLink}, {observe: "response"}).subscribe({
       next: (response) => {
         console.log(`joined chat: ${response.body?.chatId}`);
-        this.popupService.dispatch('Created chat successfully!', 'ok');
+        this.popupService.dispatch('Joined chat successfully!', 'ok');
+        this.chatService.updateChatList();
       },
       error: (response) => {
         console.log(`couldn't join chat: `, response);

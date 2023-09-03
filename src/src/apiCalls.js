@@ -205,7 +205,7 @@ function addListenerSocket(chatId, userId, responseObject) {
   if (!listenerMap) {
     messageBroadcastingSockets.set(chatId, new Map([[userId, responseObject]]));
   } else {
-    listenerMap[userId] = responseObject; // add or update listening response
+    listenerMap.set(userId, responseObject); // add or update listening response
   }
 }
 function broadcastMessage(chatId, messageObject) {
@@ -213,7 +213,6 @@ function broadcastMessage(chatId, messageObject) {
   // debug: this part is verified to be working, the problem is probably with the headers
   if (socketList) {
     socketList.forEach(res => {
-      // console.log(`sending to client: ${JSON.stringify(messageObject)}`);
       // this format is required by EventSource object to be working.
       res.write(`event: message\n`);
       res.write(`data: ${JSON.stringify(messageObject)}\n\n`);
@@ -267,7 +266,7 @@ router.post('/fetchMessages', (req, res) => {
 
     // TODO: put all these string keywords into an enum
 
-    dbs.getRecord(dbs.MESSAGES_TABLE, ['id', 'dateCreated', 'userId', 'content'], `chatId='${chatId}' AND userId='${userId}'`, recordTo, 'dateCreated').then(output => {
+    dbs.getRecord(dbs.MESSAGES_TABLE, ['id', 'dateCreated', 'userId', 'content'], `chatId='${chatId}'`, recordTo, 'dateCreated').then(output => {
       let requestedOutput = null;
       if (Array.isArray(output)) {
         // webstorm is so incredibly advanced, it already knows that this branch can only be run after output is determined to be an array, and so it automatically highlights output as an array, but only inside this branch.
@@ -292,7 +291,7 @@ router.get('/streamMessages', (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     res.writeHead(200)
 
-    console.log('registering a listening client:', chatId, userId);
+    // console.log('registering a listening client:', chatId, userId);
     addListenerSocket(chatId, userId, res);
   }, () => {});
 });
@@ -346,7 +345,7 @@ router.post('/createChat', (req, res) => {
       // add chat and add self
       let chatInsertion = {
         chatName: chatName,
-        isPublic: 0,
+        isPublic: 1, // default 1 meaning anyone can join provided he has an invitation link
         dateCreated: currentDate,
         ownerId: userId,
         isFriendChat: 0,
@@ -401,16 +400,18 @@ router.post('/createChatInviteLink', (req, res) => {
 
 router.post('/joinChat', (req, res) => {
   verifyRequest(req, res, ['shortId']).then(userId => {
-
     // todo: request sends a chat invitation link, not a chatId, fix asap
 
     // dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['chatId', 'isPublic']);
-    let shortId = req.body['shortId']; // this is actually shortId
+    let shortId = req.body['shortId'];
 
     // If chat is public, just add user, if private, check for an invitation
+    // update: chats will be public by default, meaning with an invitation LINK you can just join,
+    //         and special privacy option will need to be turned on for the chat to turn private: only individual invites
     dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['chatId'], `shortId='${shortId}'`).then(inviteOutput => {
       if (inviteOutput) {
         let chatId = inviteOutput['chatId'];
+        // console.log(`user: ${userId} joining: ${chatId} via ${shortId}`);
         dbs.getRecord(dbs.CHATS_TABLE, ['isPublic'], `id='${chatId}'`).then(chatOutput => {
           // todo: types may need fixing here, test it again when the system will be up
           let finalizeInsertion = () => {
@@ -424,8 +425,7 @@ router.post('/joinChat', (req, res) => {
               res.send({chatId: chatId});
             });
           }
-
-          if (chatOutput?.['isPublic'] === '1') {
+          if (chatOutput?.isPublic === 1) {
             finalizeInsertion();
           } else {
             // if private, check if user was invited
@@ -517,9 +517,16 @@ router.post('/getInviteLinkDetails', (req, res) => {
   }, () => {});
 });
 
-router.post('/', (req, res) => {
-  verifyRequest(req, res).then(userId => {
-
+router.post('/fetchChatMembers', (req, res) => {
+  verifyRequest(req, res, ['chatId']).then(userId => {
+    let chatId = req.body['chatId'];
+    dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id', 'userId'], `chatId='${chatId}'`, 200).then(output => {
+      output.forEach((user) => {
+        user.id = user.userId;
+        user.userId = undefined;
+      });
+      res.send({ chatMemberList: output });
+    });
   }, () => {});
 });
 

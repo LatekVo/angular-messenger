@@ -19,8 +19,30 @@ export class ChatContextService {
   storedMessageList = new BehaviorSubject([] as MessageModel[]);
   //messageStreamSocket: WebSocketSubject<MessageModel> = webSocket('/');
   messageStream: EventSource = new EventSource('');
+
+  updateChatList() {
+    this.userContextService.checkForCookies();
+    this.http.post<{chats: string[]}>('/api/fetchChats', {})
+    .pipe(map(body => body.chats))
+    .subscribe((rawChatIdList) => {
+      this.storedChatsList.next(rawChatIdList.map((chatId) => {
+        return {
+          chatName: undefined,
+          chatId: chatId,
+          pfpSourceUrl: `${chatId}.png`
+        }
+      }));
+      this.storedChatsList.value.forEach((chat) => {
+        this.http.post<{chatName: string}>('/api/getChatName', {chatId: chat.chatId})
+          .pipe(map(body => body.chatName))
+          .subscribe((chatName) => {
+            chat.chatName = chatName;
+          });
+      });
+    });
+  }
+
   constructor(private http: HttpClient, private cookieService: CookieService, private popupService: PopupHandlerService, private userContextService: UserContextService) {
-    this.messageStream.close();
     let pagination = {
       batchAmount: 1000, // temporarily high, will have to break it down into chunks later, chunks of 50 to be exact.
       batchIndex: 0,
@@ -30,13 +52,11 @@ export class ChatContextService {
     // todo: cache results of fetchMessages, and check for them before sending a new request.
     // todo: sort each received message by whether it's authored by the current user.
     this.storedOpenedChatId.subscribe((newChatId) => {
-
       if (newChatId === null) {
         // popupService.dispatch('Opened a chat with no ID assigned!', 'error')
         // this behaviour is to be expected at the startup throw new Error('opened a chat with no ID assigned');
         return;
       }
-
       this.storedChatsList.value.forEach((selectedChat, index, array) => {
         if (selectedChat.chatId === newChatId) {
           this.storedOpenChat.next(selectedChat);
@@ -66,6 +86,7 @@ export class ChatContextService {
           // we will be transmitting chatId through cookies, since i wanted to do that anyways to autoload last open chat on login
           cookieService.setCookie('chatId', newChatId);
 
+          this.messageStream.close();
           this.messageStream = new EventSource('/api/streamMessages', { withCredentials: true }); // {withCredentials: true} ensures all cookies are sent
           this.messageStream.onmessage = (incomingEvent) => {
             console.log(`chat-context: received broadcast:`, incomingEvent.data);
@@ -77,25 +98,6 @@ export class ChatContextService {
           }
         });
     });
-
-    this.http.post<{chats: string[]}>('/api/fetchChats', {})
-    .pipe(map(body => body.chats))
-    .subscribe((rawChatIdList) => {
-      this.storedChatsList.next(rawChatIdList.map((chatId) => {
-        return {
-          chatName: undefined,
-          chatId: chatId,
-          pfpSourceUrl: `${chatId}.png`
-        }
-      }));
-
-      this.storedChatsList.value.forEach((chat) => {
-        this.http.post<{chatName: string}>('/api/getChatName', {chatId: chat.chatId})
-        .pipe(map(body => body.chatName))
-        .subscribe((chatName) => {
-          chat.chatName = chatName;
-        });
-      });
-    });
+    this.updateChatList();
   }
 }

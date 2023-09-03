@@ -15,8 +15,8 @@
     </mat-expansion-panel-header>
     <mat-list>
       <mat-list-item *ngFor="let invite of inviteLinkList">
-        <span class="invite-text">{{invite.shortId}}</span>
-        <button mat-flat-button (click)="copyToClipboard(invite.id)">Copy</button>
+        <span class="list-item-text">{{invite.shortId}}</span>
+        <button mat-flat-button (click)="copyToClipboard(invite.shortId)">Copy</button>
         <button mat-flat-button (click)="displayInvitePopup(invite.id)">Details</button> <!-- displays the same popup that is displayed at creation -->
         <button mat-stroked-button class="revoke" color="warn" (click)="revokeInvite(invite.id)">Revoke</button>
       </mat-list-item>
@@ -27,17 +27,11 @@
       <h3 class="list-header">Chat Members</h3>
     </mat-expansion-panel-header>
     <mat-list>
-      <mat-list-item>
-        <img src="" alt="">
-        <span>Anon</span>
-      </mat-list-item>
-      <mat-list-item>
-        <img src="" alt="">
-        <span>Anon1</span>
-      </mat-list-item>
-      <mat-list-item>
-        <img src="" alt="">
-        <span>Anon2</span>
+      <mat-list-item  *ngFor="let member of chatMemberList">
+        <div class="alignment-wrapper">
+          <img class="list-item-img" src="{{member.pfpSourceUrl}}" alt="">
+          <span class="list-item-text">{{member.username}}</span>
+        </div>
       </mat-list-item>
     </mat-list>
   </mat-expansion-panel>

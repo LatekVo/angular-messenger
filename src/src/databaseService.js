@@ -135,7 +135,7 @@ module.exports = {
     }
 
     return new Promise((success, error) => {
-      db.run(`UPDATE TABLE SET ${keyValueString} WHERE ${condition} LIMIT 1;`, (err) => {
+      db.run(`UPDATE ${tableName} SET ${keyValueString} WHERE ${condition};`, (err) => {
         if (err) {
           error(err);
         } else {

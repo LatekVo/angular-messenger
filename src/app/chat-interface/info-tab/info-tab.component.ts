@@ -4,6 +4,7 @@ import { PopupHandlerService } from "../../shared/services/popup-handler.service
 import { HttpClient } from "@angular/common/http";
 import { InviteLinkModel } from "../../shared/models/inviteLinkModel";
 import {response} from "express";
+import {PersonModel} from "../../shared/models/personModel";
 
 @Component({
   selector: 'app-info-tab',
@@ -12,18 +13,36 @@ import {response} from "express";
 })
 export class InfoTabComponent {
   inviteLinkList = [] as InviteLinkModel[];
+  chatMemberList = [] as PersonModel[];
+
   updateInviteLinkList() {
     this.http.post<{ inviteLinkList: InviteLinkModel[] }>('/api/fetchChatInviteLinks', {chatId: this.chatContextService.storedOpenedChatId.value}).subscribe((response) => {
       this.inviteLinkList = response.inviteLinkList;
     });
   }
+
+  updateChatMemberList() {
+    this.http.post<{ chatMemberList: PersonModel[] }>('/api/fetchChatMembers', {chatId: this.chatContextService.storedOpenedChatId.value}).subscribe((response) => {
+      this.chatMemberList = response.chatMemberList;
+      // fill in username and pfp
+      this.chatMemberList.forEach((userObject) => {
+        userObject.pfpSourceUrl = `${userObject.id}.png`;
+        this.http.post<{ username: string }>('/api/getUsername', {id: userObject.id}).subscribe((response) => {
+          userObject.username = response.username;
+        });
+      });
+    });
+  }
+
   constructor(public chatContextService: ChatContextService, private popupHandlerService: PopupHandlerService, private http: HttpClient) {
 
     // on chat change: update invite & user list
     chatContextService.storedOpenedChatId.subscribe((newChatId) => {
       this.updateInviteLinkList();
+      this.updateChatMemberList();
     });
     this.updateInviteLinkList();
+    this.updateChatMemberList();
   }
 
   changeServerPfp() {
@@ -50,11 +69,7 @@ export class InfoTabComponent {
   }
 
   copyToClipboard(input: any) {
-    const type = "text/plain";
-    const blob = new Blob([input], { type });
-    const data = [new ClipboardItem({ [type]: blob })];
-
-    navigator.clipboard.write(data).then(
+    navigator.clipboard.writeText(input).then(
       () => {
         this.popupHandlerService.dispatch(`Link copied to clipboard`, "info");
       },
