@@ -23,5 +23,17 @@ export class CookieService {
   deleteCookie(key: string) {
     document.cookie = key +"=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
   }
+
+  // direct copy: https://stackoverflow.com/questions/179355/clearing-all-cookies-with-javascript
+  deleteAllCookies() {
+    const cookies = document.cookie.split(";");
+
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i];
+      const eqPos = cookie.indexOf("=");
+      const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
+  }
   constructor() { }
 }

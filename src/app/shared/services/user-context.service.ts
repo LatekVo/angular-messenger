@@ -14,6 +14,14 @@ import {PopupHandlerService} from "./popup-handler.service";
 export class UserContextService {
   storedUserId = new BehaviorSubject(localStorage.getItem(lsk.USER_ID));
   storedUserToken = new BehaviorSubject(localStorage.getItem(lsk.USER_TOKEN));
+  storedUsername = new BehaviorSubject('');
+
+  // todo: if i ever end up writing more utility functions like this, i will move them all to a separate httpWorkerService, which will directly interface with apiCalls.js file
+  updateUsername(userId: string) {
+    this.http.post<{ username: string }>('/api/getUsername', {id: userId}).subscribe((res) => {
+      this.storedUsername.next(res.username);
+    });
+  }
 
   checkForCookies() {
     // user token is initially transferred into local storage, but after it's verification, it has to be copied back to the cookie for http communication purposes
@@ -66,8 +74,21 @@ export class UserContextService {
 
   }
 
+  logOut() {
+    this.cookieService.deleteAllCookies();
+    localStorage.clear();
+    this.router.navigate(['/', 'login']).catch(err => console.log('navigation error: ' + err));
+  }
+
   constructor(private http: HttpClient, private router: Router, private cookieService: CookieService, private popupService: PopupHandlerService) {
     this.checkForCookies();
     this.goToDefaultPage();
+    this.storedUserId.subscribe((newId) => {
+      if (newId)
+        this.updateUsername(newId);
+    });
+    if (this.storedUserId.value) {
+      this.updateUsername(this.storedUserId.value);
+    }
   }
 }

@@ -1,12 +1,19 @@
 /* for now these angular components looks completely off, but i will aim to replace everything with them for more uniform look */
 #info-root {
+  position: relative; /* just an anchor */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+#server-info {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-#info-root > * {
+#server-info > * {
   display: block;
 }
 
@@ -92,4 +99,51 @@ button {
 /* this class is created when setting color="warn"*/
 .mat-warn {
   background-color: var(--basecolor-light) !important;
+}
+
+#user-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: auto;
+  border-top: 10px solid var(--basecolor);
+
+}
+
+#panel-wrap {
+  background-color: var(--basecolor-dark);
+  display: flex;
+  flex-direction: row;
+  margin: 8px;
+  padding: 4px;
+  height: 100%;
+  border-radius: 4px;
+}
+
+#user-pfp {
+  height: 36px; /* hardcoded mat-button height, no dynamic height worked here because of how css works */
+  aspect-ratio: 1 / 1;
+  margin: 4px;
+  border-radius: 4px;
+}
+
+#username-field {
+  margin-top: auto;
+  margin-bottom: auto;
+  font-family: monospace;
+  font-size: larger;
+  color: black;
+  background-color: white;
+  padding: 4px 8px;
+  width: fit-content;
+  margin-left: 4px;
+  border-radius: 4px;
+}
+
+#user-info-text-column-wrapper {
+  margin-left: auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
 }

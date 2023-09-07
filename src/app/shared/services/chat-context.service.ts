@@ -17,7 +17,6 @@ export class ChatContextService {
   storedChatsList: BehaviorSubject<ChatModel[]> = new BehaviorSubject(new Array<ChatModel>());
   storedOpenedChatId = new BehaviorSubject(localStorage.getItem(lsk.OPENED_CHAT_ID));
   storedMessageList = new BehaviorSubject([] as MessageModel[]);
-  //messageStreamSocket: WebSocketSubject<MessageModel> = webSocket('/');
   messageStream: EventSource = new EventSource('');
 
   updateChatList() {
@@ -33,6 +32,7 @@ export class ChatContextService {
         }
       }));
       this.storedChatsList.value.forEach((chat) => {
+        // todo: during runtime, this segment only works once, the next time it's run an empty request is sent.
         this.http.post<{chatName: string}>('/api/getChatName', {chatId: chat.chatId})
           .pipe(map(body => body.chatName))
           .subscribe((chatName) => {

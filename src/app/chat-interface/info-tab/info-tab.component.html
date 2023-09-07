@@ -1,38 +1,51 @@
 <!-- all info will be mushed and gravitated to the center, separated only by empty space -->
-<div id="info-root" *ngIf="this.chatContextService.storedOpenedChatId.value">
-  <img src="{{(this.chatContextService.storedOpenChat | async)?.pfpSourceUrl}}" alt="This server's picture" id="server-pfp">
-  <div id="info-action-buttons">
-    <!-- These buttons will be dynamic tiles, they will have a fixed width background and unlimited heights to use -->
-    <button mat-flat-button (click)="startVoiceCall()">Start Call</button>
-    <button mat-flat-button (click)="inviteUserToServer()">Invite User</button>
-    <button mat-flat-button (click)="createServerInvite()">Create new server invite</button>
-    <button mat-stroked-button (click)="changeServerPfp()">Change server's picture</button>
-    <button mat-stroked-button (click)="openServerSettings()">Server Settings</button>
+<div id="info-root">
+  <div id="server-info" *ngIf="this.chatContextService.storedOpenedChatId.value">
+    <img src="{{(this.chatContextService.storedOpenChat | async)?.pfpSourceUrl}}" alt="This server's picture" id="server-pfp">
+    <div id="info-action-buttons">
+      <!-- These buttons will be dynamic tiles, they will have a fixed width background and unlimited heights to use -->
+      <button mat-flat-button (click)="startVoiceCall()">Start Call</button>
+      <button mat-flat-button (click)="inviteUserToServer()">Invite User</button>
+      <button mat-flat-button (click)="createServerInvite()">Create new server invite</button>
+      <button mat-stroked-button (click)="changeServerPfp()">Change server's picture</button>
+      <button mat-stroked-button (click)="openServerSettings()">Server Settings</button>
+    </div>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <h3 class="list-header">Invite links for this chat</h3>
+      </mat-expansion-panel-header>
+      <mat-list>
+        <mat-list-item *ngFor="let invite of inviteLinkList">
+          <span class="list-item-text">{{invite.shortId}}</span>
+          <button mat-flat-button (click)="copyToClipboard(invite.shortId)">Copy</button>
+          <button mat-flat-button (click)="displayInvitePopup(invite.id)">Details</button> <!-- displays the same popup that is displayed at creation -->
+          <button mat-stroked-button class="revoke" color="warn" (click)="revokeInvite(invite.id)">Revoke</button>
+        </mat-list-item>
+      </mat-list>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <h3 class="list-header">Chat Members</h3>
+      </mat-expansion-panel-header>
+      <mat-list>
+        <mat-list-item  *ngFor="let member of chatMemberList">
+          <div class="alignment-wrapper">
+            <img class="list-item-img" src="{{member.pfpSourceUrl}}" alt="">
+            <span class="list-item-text">{{member.username}}</span>
+          </div>
+        </mat-list-item>
+      </mat-list>
+    </mat-expansion-panel>
   </div>
-  <mat-expansion-panel>
-    <mat-expansion-panel-header>
-      <h3 class="list-header">Invite links for this chat</h3>
-    </mat-expansion-panel-header>
-    <mat-list>
-      <mat-list-item *ngFor="let invite of inviteLinkList">
-        <span class="list-item-text">{{invite.shortId}}</span>
-        <button mat-flat-button (click)="copyToClipboard(invite.shortId)">Copy</button>
-        <button mat-flat-button (click)="displayInvitePopup(invite.id)">Details</button> <!-- displays the same popup that is displayed at creation -->
-        <button mat-stroked-button class="revoke" color="warn" (click)="revokeInvite(invite.id)">Revoke</button>
-      </mat-list-item>
-    </mat-list>
-  </mat-expansion-panel>
-  <mat-expansion-panel>
-    <mat-expansion-panel-header>
-      <h3 class="list-header">Chat Members</h3>
-    </mat-expansion-panel-header>
-    <mat-list>
-      <mat-list-item  *ngFor="let member of chatMemberList">
-        <div class="alignment-wrapper">
-          <img class="list-item-img" src="{{member.pfpSourceUrl}}" alt="">
-          <span class="list-item-text">{{member.username}}</span>
-        </div>
-      </mat-list-item>
-    </mat-list>
-  </mat-expansion-panel>
+  <div id="user-info">
+    <div id="panel-wrap">
+      <img src="{{ this.userContextService.storedUserId.value }}.png" alt="" id="user-pfp">
+      <span id="username-field">{{ this.userContextService.storedUsername.value }}</span>
+      <div id="user-info-text-column-wrapper">
+        <button mat-flat-button (click)="displayProfileDetails()">Details</button>
+        <button mat-flat-button (click)="displayProfileSettings()">Settings</button> <!-- uniform popup + panels with different settings and image options -->
+        <button mat-stroked-button class="revoke" color="warn" (click)="logOut()">Log out</button>
+      </div>
+    </div>
+  </div>
 </div>

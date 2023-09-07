@@ -5,6 +5,7 @@ import { HttpClient } from "@angular/common/http";
 import { InviteLinkModel } from "../../shared/models/inviteLinkModel";
 import {response} from "express";
 import {PersonModel} from "../../shared/models/personModel";
+import {UserContextService} from "../../shared/services/user-context.service";
 
 @Component({
   selector: 'app-info-tab',
@@ -34,7 +35,7 @@ export class InfoTabComponent {
     });
   }
 
-  constructor(public chatContextService: ChatContextService, private popupHandlerService: PopupHandlerService, private http: HttpClient) {
+  constructor(public chatContextService: ChatContextService, public userContextService: UserContextService, private popupHandlerService: PopupHandlerService, private http: HttpClient) {
 
     // on chat change: update invite & user list
     chatContextService.storedOpenedChatId.subscribe((newChatId) => {
@@ -92,5 +93,17 @@ export class InfoTabComponent {
 
   displayInvitePopup(inviteId: any) {
     this.popupHandlerService.displayInviteDetails(inviteId);
+  }
+
+  displayProfileDetails() {
+
+  }
+
+  displayProfileSettings() {
+
+  }
+
+  logOut() {
+    this.userContextService.logOut();
   }
 }
