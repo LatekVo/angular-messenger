@@ -4,18 +4,24 @@
   <span>{{(this.chatContextService.storedOpenChat | async)?.chatName}}</span>
 </div>
 
-<ul id="conversation-box">
-  <div *ngIf="!this.chatContextService.storedMessageList.value">
+<div id="conversation-box">
+  <p class="chat-box-filler" *ngIf="!this.chatContextService.storedOpenedChatId.value">
     Open a chat to start talking.
-  </div>
-  <div *ngIf="this.chatContextService.storedMessageList.value">
-    <li *ngFor="let message of this.chatContextService.storedMessageList.value" [ngClass]="{'ownMessage': message.writtenByMe, 'message-pack': true}">
+  </p>
+  <p class="chat-box-filler" *ngIf="this.chatContextService.storedOpenedChatId.value && this.chatContextService.storedMessageList.value.length == 0">
+    Send the very first message of {{this.chatContextService.storedOpenChat.value.chatName}}!
+  </p>
+  <ul *ngIf="this.chatContextService.storedMessageList.value.length > 0" id="message-list">
+    <li *ngFor="let message of this.chatContextService.storedMessageList.value" [ngClass]="{'own-message': message.writtenByMe, 'message-pack': true}">
       <!-- todo to enable image sending, either convert all links to embeds, or add some optional img tag -->
-      <div id="sender-name">{{message.senderName}}</div>
-      <div id="sender-content">{{message.content}}</div>
+      <div class="message-quick-info">
+        <img class="sender-pfp" src="{{message.senderId}}.png" alt="">
+        <span class="sender-name">{{message.senderName?.value}}:</span>
+      </div>
+      <div class="sender-content">{{message.content}}</div>
     </li>
-  </div>
-</ul>
+  </ul>
+</div>
 
 <div id="input-box" *ngIf="this.chatContextService.storedOpenedChatId.value">
   <input id="message-input" [(ngModel)]="messageInput">

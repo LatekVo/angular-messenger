@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS messages (
   id TEXT PRIMARY KEY,
 
   dateCreated DATETIME,
-  userId TEXT,
+  senderId TEXT,
   chatId TEXT,
   content TEXT,
 

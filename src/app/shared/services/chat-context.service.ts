@@ -6,7 +6,8 @@ import { MessageModel } from "../models/messageModel";
 import { CookieService } from "./cookie.service";
 import { PopupHandlerService } from "./popup-handler.service";
 import { ChatModel } from "../models/chatModel";
-import { UserContextService } from "./user-context.service"; // needed for message streaming
+import { UserContextService } from "./user-context.service";
+import { ApiHandlerService } from "./api-handler.service"; // needed for message streaming
 //import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 
 @Injectable({
@@ -42,7 +43,7 @@ export class ChatContextService {
     });
   }
 
-  constructor(private http: HttpClient, private cookieService: CookieService, private popupService: PopupHandlerService, private userContextService: UserContextService) {
+  constructor(private http: HttpClient, private cookieService: CookieService, public apiHandlerService: ApiHandlerService, private popupService: PopupHandlerService, private userContextService: UserContextService) {
     let pagination = {
       batchAmount: 1000, // temporarily high, will have to break it down into chunks later, chunks of 50 to be exact.
       batchIndex: 0,
@@ -67,14 +68,16 @@ export class ChatContextService {
         .pipe(
           map(body => body.messages.reverse()),
           map(messages => {
-              messages.forEach((message) => {
-                if (message.senderId == this.userContextService.storedUserId.value) {
-                  message.writtenByMe = true;
-                }
-              });
-              return messages;
-            }
-          )
+            messages.forEach((message) => {
+              if (message.senderId == this.userContextService.storedUserId.value) {
+                message.writtenByMe = true;
+              }
+              // local storage function, will make requests for each unique id and for duplicates just return the value.
+              // i believe it will be simpler to write a simple store myself than to rely on the ngRx
+              message.senderName = this.apiHandlerService.getUsername(message.senderId);
+            });
+            return messages;
+          })
         )
         .subscribe((newMessages) => {
           // ngrx would really come in handy here, for caching all the chats when context is switched.

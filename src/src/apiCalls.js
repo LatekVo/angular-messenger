@@ -266,7 +266,7 @@ router.post('/fetchMessages', (req, res) => {
 
     // TODO: put all these string keywords into an enum
 
-    dbs.getRecord(dbs.MESSAGES_TABLE, ['id', 'dateCreated', 'userId', 'content'], `chatId='${chatId}'`, recordTo, 'dateCreated').then(output => {
+    dbs.getRecord(dbs.MESSAGES_TABLE, ['id', 'dateCreated', 'senderId', 'content'], `chatId='${chatId}'`, recordTo, 'dateCreated').then(output => {
       let requestedOutput = null;
       if (Array.isArray(output)) {
         // webstorm is so incredibly advanced, it already knows that this branch can only be run after output is determined to be an array, and so it automatically highlights output as an array, but only inside this branch.

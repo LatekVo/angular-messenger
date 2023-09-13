@@ -1,3 +1,5 @@
+import {BehaviorSubject} from "rxjs";
+
 export interface MessageModel {
   id: string;
   content: string;
@@ -6,6 +8,6 @@ export interface MessageModel {
   // set this locally, while redundant, these simplify ui rendering and permission logic a lot
   // these will be sent in by the server as undefined, so they won't take up any additional space anyway
 
-  senderName: string | undefined;
+  senderName: BehaviorSubject<string> | undefined;
   writtenByMe: boolean | undefined;
 }
