@@ -119,7 +119,7 @@ function verifyRequest(req, res, requiredValues = []) {
     let sanitize = (input) => {
       // https://stackoverflow.com/questions/2794137/sanitizing-user-input-before-adding-it-to-the-dom-in-javascript
       const map = {
-        '&': '&amp;',
+        //'&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
@@ -231,7 +231,7 @@ router.post('/sendMessage', (req, res) => {
       if (output?.id) {
         let messageInsertionQuery = {
           dateCreated: newSqlDate(),
-          userId: userId,
+          senderId: userId,
           chatId: messageChatId,
           content: messageContent
         };
@@ -240,7 +240,7 @@ router.post('/sendMessage', (req, res) => {
           let broadCastedMessage = {
             id: messageId,
             dateCreated: newSqlDate(), // more readable for now
-            userId: userId,
+            senderId: userId,
             content: messageContent
           }
           broadcastMessage(messageChatId, broadCastedMessage);

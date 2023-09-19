@@ -12,7 +12,7 @@ const databaseStarter = require('./src/databaseStarter');
 const databaseService = require('./src/databaseService');
 const apiRouter = require('./src/apiCalls');
 
-const port = process.env.NODE_PORT || 3000;
+const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
 const rootPath = path.join(__dirname, '..', 'dist', 'angular-messenger');
 

@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS messages (
   chatId TEXT,
   content TEXT,
 
-  FOREIGN KEY(userId) REFERENCES users(id),
+  FOREIGN KEY(senderId) REFERENCES users(id),
   FOREIGN KEY(chatId) REFERENCES chats(id)
 
   );
