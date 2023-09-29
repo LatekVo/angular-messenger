@@ -9,6 +9,31 @@ import {BehaviorSubject} from "rxjs";
   providedIn: 'root'
 })
 export class ApiHandlerService {
+  // todo: either move this function to a util service or move message fetching here
+  public deSanitize = (input: string) => {
+    // reversal of the server-side function, this theoretically shouldn't be necessary, but angular does some unknown operations in the background which force me to de-sanitize these notations manually
+    const map = new Map<string, string>([
+      ['&lt;', '<'],
+      ['&gt;', '>'],
+      ['&quot;', '"'],
+      ['&#x27;', "'"],
+      ['&#x2F;', '/'],
+      ['&grave;', '`'],
+      //['&amp;', '&']
+    ]);
+
+    const reg = /[&<>"'/`]/ig;
+    return input.replace(reg, (match: string): string => {
+      let res = map.get(match);
+      if (res)
+        return res;
+      else
+        return '';
+
+      //return map.get(match) ?? '';
+    });
+  }
+
   constructor(private http: HttpClient) { }
 
   private usernameCache: Map<string, BehaviorSubject<string>> = new Map();
@@ -17,7 +42,7 @@ export class ApiHandlerService {
       this.usernameCache.set(id, new BehaviorSubject<string>(""));
       this.http.post<{username: string}>('/api/getUsername', {id: id}).subscribe({
         next: response => {
-          this.usernameCache.get(id)?.next(response.username);
+          this.usernameCache.get(id)?.next(this.deSanitize(response.username));
         },
         error: response => {}
       });

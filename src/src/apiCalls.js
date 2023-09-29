@@ -2,12 +2,15 @@ const dbs = require('./databaseService');
 
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
 
 const createDOMPurify = require('dompurify');
 const { JSDOM } = require('jsdom'); // simulates a window
 const DOMPurify = createDOMPurify(new JSDOM().window);
+const upload = require('./multerInstance');
 
 const bcrypt = require('bcrypt');
+const path = require("path");
 //const {webSocket} = require("rxjs/webSocket");
 
 const PAGE_URL = 'localhost:3000';
@@ -151,6 +154,7 @@ function verifyRequest(req, res, requiredValues = []) {
     requiredValues.forEach((key) => {
       let value = JSON.stringify(req.body[key]);
       if (value === undefined && value !== '') {
+
         allValuesPresent = false;
       } else {
         req.body[key] = sanitizeEntity(req.body[key]);
@@ -248,6 +252,59 @@ router.post('/sendMessage', (req, res) => {
         });
       } else {
         res.writeHead(401, 'User is not a member of this chat');
+        res.end();
+      }
+    });
+  }, () => {});
+});
+
+router.post('/sendImage', upload.fields([{name: 'image', maxCount: 1}, {name: 'chatId', maxCount: 1}]), (req, res) => {
+  // image is not required as it's not a part of the body object. DO NOT FIX!
+  verifyRequest(req, res, ['chatId']).then(userId => {
+    // console.log(req.body); // returns { chatId: string}
+    // console.log(req.files); // returns { image: imageJson }
+    let imageContent = req.files['image'][0];
+    let messageChatId = req.body['chatId'];
+
+    dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `chatId='${messageChatId}' AND userId='${userId}'`).then(output => {
+      // check if the user is a member of requested chat && size < 10MB
+      if (output?.id && imageContent !== undefined && imageContent?.size <= (Math.pow(2, 20) * 10)) {
+        // rare case, we generate the id here, for better safety we could send the image first and THEN edit it with the appropriate content,
+        // but for now this is sufficient.
+        // todo: this response protocol has a lot of unfinished security, and has to be patched up asap before lauching any production builds.
+        let imageId = Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join(''); // copied from databaseService.js
+        let fileExtension = 'png';
+        // img fields: { fieldname: 'image', originalname: string, encoding: 'Xbit', mimetype: 'image/XXX', buffer: Buffer, size: Number }
+        // todo: out of these ^^^, we want to check mimetype and size
+        // save the image
+        console.log(__dirname)
+        let fileHandle = fs.openSync(path.join(__dirname, '..', 'static', `${imageId}.${fileExtension}`), 'w', 0o660);
+        fs.writeSync(fileHandle, imageContent['buffer']);
+        fs.closeSync(fileHandle);
+
+        let messageInsertionQuery = {
+          // todo: change .png into an autodetected type: jpg jpeg or png
+          // IT LOOKS SIMPLE TO JUST REPLACE [] WITH <> BUT THAT WOULD ENABLE HARD TO PATCH XSS INJECTION, angular handles this well by itself as long as we don't manually force the html into the DOM
+          // instead, we will look for @image() and place what's inside into a carefully injected <img> tag. No user input will get injected,
+          // if user simulates this syntax sanitize() along with angular will pick out any XSS injection attempts
+          id: imageId,
+          dateCreated: newSqlDate(),
+          senderId: userId,
+          chatId: messageChatId,
+          content: `@image(${imageId}.png)`
+        };
+        dbs.insertRecord(dbs.MESSAGES_TABLE, messageInsertionQuery).then(messageId => {
+          let broadCastedMessage = {
+            id: messageId,
+            dateCreated: newSqlDate(), // more readable for now
+            senderId: userId,
+            content: `@image(${imageId}.png)`
+          }
+          broadcastMessage(messageChatId, broadCastedMessage);
+          // no res.end(), that would interfere with broadcastMessage
+        });
+      } else {
+        res.writeHead(401, 'File size is too large'); // most likely error
         res.end();
       }
     });

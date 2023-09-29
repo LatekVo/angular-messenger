@@ -10,6 +10,7 @@ import { SharedModule } from "../shared/shared.module";
 import {MatListModule} from "@angular/material/list";
 import {MatButtonModule} from "@angular/material/button";
 import {MatExpansionModule} from "@angular/material/expansion";
+import {MatIconModule} from "@angular/material/icon";
 
 @NgModule({
   declarations: [
@@ -26,7 +27,8 @@ import {MatExpansionModule} from "@angular/material/expansion";
         NgOptimizedImage,
         MatListModule,
         MatButtonModule,
-        MatExpansionModule
+        MatExpansionModule,
+        MatIconModule
     ],
   exports: [
     ChatInterfaceComponent

@@ -2,11 +2,21 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const fs = require('fs');
-const bodyParser = require('body-parser');
+const bodyParser = require('body-parser'); // parser for request body JSON data
+const multer = require('multer'); // parser for FormData data
 const cookieParser = require("cookie-parser");
 
+// we're using a non-standard multer mechanism, essentially saving received files into the memory (sounds scary, but I will ignore my gut),
+// then after saving the image to ram, and processing the request, we move the image from ram to it's destination
+const upload = require('./src/multerInstance');
+
 app.use(cookieParser());
-app.use(bodyParser.json());
+app.use(bodyParser.json()); // application/json
+app.use(bodyParser.urlencoded({ extended: true })); // application/x-www-form-urlencoded
+// all of the lines below dictate the only allowed type of form data transmitted globally.
+// app.use(upload.array()); // returns: 500 unexpected field
+// app.use(upload.single('image')); // returns: 500 unexpected field (doesn't see chatId)
+// app.use(upload.any()); // throws: too long to paste, but critical
 
 const databaseStarter = require('./src/databaseStarter');
 const databaseService = require('./src/databaseService');
@@ -38,6 +48,11 @@ app.get(/^(?!\/api).*/, function(req, res) {
   });
 });
 
+// global stack error handling, should completely mitigate client-caused server crashes
+// DO NOT FIX! Everything here from the app.use() construction to res.status() is unrecognised and marked as error, this is IDE's mistake. DO NOT FIX!
+app.use((err, req, res, next) => {
+  res.status(500).send(err.message);
+});
 app.use('/api', apiRouter);
 
 app.listen(port);

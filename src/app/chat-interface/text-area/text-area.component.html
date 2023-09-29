@@ -24,8 +24,13 @@
 </div>
 
 <div id="input-box" *ngIf="this.chatContextService.storedOpenedChatId.value">
-  <input id="message-input" [(ngModel)]="messageInput">
-  <button id="message-send" (click)="sendMessage()" [disabled]="!messageInput">
-    <img src="" alt="Send">
+  <!-- https://blog.angular-university.io/angular-file-upload/ -->
+  <input type="file" class="file-input" style="display: none;" (change)="this.sendImage($event)" #fileUpload>
+  <button class="input-box-button" (click)="fileUpload.click()">
+    <mat-icon>attach_file</mat-icon>
+  </button>
+  <input id="message-input" [(ngModel)]="messageInput" (keyup.enter)="sendMessage()">
+  <button class="input-box-button" (click)="sendMessage()" [disabled]="!messageInput">
+    <mat-icon>send</mat-icon>
   </button>
 </div>

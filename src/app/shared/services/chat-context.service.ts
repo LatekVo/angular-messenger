@@ -64,17 +64,22 @@ export class ChatContextService {
         }
       });
 
+      let completeMessage = (message: MessageModel) => {
+        if (message.senderId == this.userContextService.storedUserId.value) {
+          message.writtenByMe = true;
+        }
+        message.content = apiHandlerService.deSanitize(message.content);
+        // local storage function, will make requests for each unique id and for duplicates just return the value.
+        // I believe it will be simpler to write a simple store myself than to rely on the ngRx
+        message.senderName = this.apiHandlerService.getUsername(message.senderId);
+      }
+
       this.http.post<{ messages: MessageModel[] }>('/api/fetchMessages', {chatId: newChatId, pagination: pagination})
         .pipe(
           map(body => body.messages.reverse()),
           map(messages => {
             messages.forEach((message) => {
-              if (message.senderId == this.userContextService.storedUserId.value) {
-                message.writtenByMe = true;
-              }
-              // local storage function, will make requests for each unique id and for duplicates just return the value.
-              // i believe it will be simpler to write a simple store myself than to rely on the ngRx
-              message.senderName = this.apiHandlerService.getUsername(message.senderId);
+              completeMessage(message);
             });
             return messages;
           })
@@ -94,6 +99,7 @@ export class ChatContextService {
           this.messageStream.onmessage = (incomingEvent) => {
             console.log(`chat-context: received broadcast:`, incomingEvent.data);
             let message = JSON.parse(incomingEvent.data);
+            completeMessage(message);
             let currentMessages = this.storedMessageList.value;
             currentMessages.push(message);
             this.storedMessageList.next(currentMessages);

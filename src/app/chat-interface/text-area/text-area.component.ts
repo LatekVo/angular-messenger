@@ -4,6 +4,8 @@ import { HttpClient } from "@angular/common/http";
 import { UserContextService } from "../../shared/services/user-context.service";
 import { ChatContextService } from "../../shared/services/chat-context.service";
 import { PopupHandlerService } from "../../shared/services/popup-handler.service";
+import {ApiHandlerService} from "../../shared/services/api-handler.service";
+import {FileChangeEvent} from "@angular/compiler-cli/src/perform_watch";
 
 
 // todo: move all network components to a separate 'API interaction' service
@@ -48,5 +50,22 @@ export class TextAreaComponent implements OnInit {
       }
     });
     this.messageInput = "";
+  }
+
+  sendImage(event: any) {
+    const image: File = event?.target?.files[0];
+    // to transmit blob files we have to use Form object
+    if (image && this.chatContextService.storedOpenedChatId.value) {
+      console.log(image);
+      let formData = new FormData();
+      formData.append('chatId', this.chatContextService.storedOpenedChatId.value);
+      formData.append('image', image, image.name);
+      this.http.post("/api/sendImage", formData).subscribe({
+        next: () => {},
+        error: response => {
+          this.popupService.dispatchFromResponse(response);
+        }
+      });
+    }
   }
 }
