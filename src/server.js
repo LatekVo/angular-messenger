@@ -30,11 +30,11 @@ const rootPath = path.join(__dirname, '..', 'dist', 'angular-messenger');
 
 // simply setting a static path won't work, due to how angular is compiled
 // every request besides /api/ requests gets served the SPA main page, this explains why get requests never worked for me lol
+let staticPath = path.join(__dirname, '..', 'src', 'static');
 app.get(/^(?!\/api).*/, function(req, res) {
   fs.stat(rootPath + req.path, function (err) {
     if (err) {
       // check for static as well before sending back default index.html
-      let staticPath = path.join(__dirname, '..', 'src', 'static');
       fs.stat(staticPath + req.path, function (err) {
         if (err) {
           res.sendFile("index.html", { root: rootPath });
@@ -54,6 +54,13 @@ app.use((err, req, res, next) => {
   res.status(500).send(err.message);
 });
 app.use('/api', apiRouter);
+
+if (!fs.existsSync(staticPath)){
+  fs.mkdirSync(staticPath);
+  console.log('created static directory');
+} else {
+  console.log('static directory already present');
+}
 
 app.listen(port);
 console.log('Listening on port ' + port);

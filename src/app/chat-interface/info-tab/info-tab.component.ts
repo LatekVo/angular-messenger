@@ -46,7 +46,29 @@ export class InfoTabComponent {
     this.updateChatMemberList();
   }
 
-  changeServerPfp() {
+  renderServerImage = true;
+  reloadServerImage() {
+    // todo: temporary solution, in future i want every server image to be hooked up to an interpolated value, which is also listening to server for changes
+    this.chatContextService.updateCurrentChatImageUrl();
+  }
+
+  changeServerImage(event: any) {
+    // todo: reload image after 1, 2 and 3 seconds
+    const image: File = event?.target?.files[0];
+    if (image && this.chatContextService.storedOpenedChatId.value) {
+      console.log(image);
+      let formData = new FormData();
+      formData.append('chatId', this.chatContextService.storedOpenedChatId.value);
+      formData.append('image', image, image.name);
+      this.http.post("/api/setServerImage", formData).subscribe({
+        next: () => {
+          this.reloadServerImage();
+        },
+        error: response => {
+          this.popupHandlerService.dispatchFromResponse(response);
+        }
+      });
+    }
 
   }
 

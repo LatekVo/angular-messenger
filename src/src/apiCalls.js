@@ -258,6 +258,12 @@ router.post('/sendMessage', (req, res) => {
   }, () => {});
 });
 
+function verifyImage(imageObject) {
+  return new Promise((accept, reject) => {
+    accept('png');
+  });
+}
+
 router.post('/sendImage', upload.fields([{name: 'image', maxCount: 1}, {name: 'chatId', maxCount: 1}]), (req, res) => {
   // image is not required as it's not a part of the body object. DO NOT FIX!
   verifyRequest(req, res, ['chatId']).then(userId => {
@@ -273,14 +279,14 @@ router.post('/sendImage', upload.fields([{name: 'image', maxCount: 1}, {name: 'c
         // but for now this is sufficient.
         // todo: this response protocol has a lot of unfinished security, and has to be patched up asap before lauching any production builds.
         let imageId = Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join(''); // copied from databaseService.js
-        let fileExtension = 'png';
         // img fields: { fieldname: 'image', originalname: string, encoding: 'Xbit', mimetype: 'image/XXX', buffer: Buffer, size: Number }
         // todo: out of these ^^^, we want to check mimetype and size
         // save the image
-        console.log(__dirname)
-        let fileHandle = fs.openSync(path.join(__dirname, '..', 'static', `${imageId}.${fileExtension}`), 'w', 0o660);
-        fs.writeSync(fileHandle, imageContent['buffer']);
-        fs.closeSync(fileHandle);
+        verifyImage(imageContent).then((fileExtension) => {
+          let fileHandle = fs.openSync(path.join(__dirname, '..', 'static', `${imageId}.${fileExtension}`), 'w', 0o660);
+          fs.writeSync(fileHandle, imageContent['buffer']);
+          fs.closeSync(fileHandle);
+        }, () => {});
 
         let messageInsertionQuery = {
           // todo: change .png into an autodetected type: jpg jpeg or png
@@ -310,6 +316,41 @@ router.post('/sendImage', upload.fields([{name: 'image', maxCount: 1}, {name: 'c
     });
   }, () => {});
 });
+
+router.post('/setUserImage', upload.fields([{name: 'image', maxCount: 1}]), (req, res) => {
+  // image is not required as it's not a part of the body object. DO NOT FIX!
+  verifyRequest(req, res).then(userId => {
+    let imageContent = req.files['image'][0];
+    verifyImage(imageContent).then((fileExtension) => {
+      let fileHandle = fs.openSync(path.join(__dirname, '..', 'static', `${userId}.${fileExtension}`), 'w', 0o660);
+      fs.writeSync(fileHandle, imageContent['buffer']);
+      fs.closeSync(fileHandle);
+      res.send();
+    }, () => {
+      res.writeHead(401, 'Image verification failed');
+      res.end();
+    });
+  }, () => {});
+});
+
+router.post('/setServerImage', upload.fields([{name: 'image', maxCount: 1}, {name: 'chatId', maxCount: 1}]), (req, res) => {
+  // image is not required as it's not a part of the body object. DO NOT FIX!
+  verifyRequest(req, res, ['chatId']).then(userId => {
+    // todo: validate permissions
+    let imageContent = req.files['image'][0];
+    let chatId = req.body['chatId'];
+    verifyImage(imageContent).then((fileExtension) => {
+      let fileHandle = fs.openSync(path.join(__dirname, '..', 'static', `${chatId}.${fileExtension}`), 'w', 0o660);
+      fs.writeSync(fileHandle, imageContent['buffer']);
+      fs.closeSync(fileHandle);
+      res.send();
+    }, () => {
+      res.writeHead(401, 'Image verification failed');
+      res.end();
+    });
+  }, () => {});
+});
+
 
 router.post('/fetchMessages', (req, res) => {
   verifyRequest(req, res, ['chatId', 'pagination']).then(userId => {

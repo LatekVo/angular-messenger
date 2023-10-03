@@ -43,6 +43,11 @@ export class ChatContextService {
     });
   }
 
+  updateCurrentChatImageUrl() {
+    // todo: temporary solution, in future i want every server image to be hooked up to an interpolated value, which is also listening to server for changes
+    this.storedOpenChat.value.pfpSourceUrl = `${this.storedOpenChat.value.chatId}.png?antiCache=${new Date().toString()}`;
+  }
+
   constructor(private http: HttpClient, private cookieService: CookieService, public apiHandlerService: ApiHandlerService, private popupService: PopupHandlerService, private userContextService: UserContextService) {
     let pagination = {
       batchAmount: 1000, // temporarily high, will have to break it down into chunks later, chunks of 50 to be exact.
