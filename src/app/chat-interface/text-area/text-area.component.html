@@ -18,13 +18,18 @@
         <img class="sender-pfp" src="{{message.senderId}}.png" alt="">
         <span class="sender-name">{{message.senderName?.value}}:</span>
       </div>
-      <div class="sender-content">{{message.content}}</div>
+      <!-- i am aware this is not the right place to write blogs about my emotions,
+           but i am extremely happy with how simple and elegant this solution works
+           regex is hard to write but so rewarding to see working!!!
+           -->
+      <div class="sender-content" *ngIf="!checkIsImage(message.content)">{{message.content}}</div>
+      <img class="sender-content" *ngIf="checkIsImage(message.content)" src="{{getImageUrl(message.content)}}">
     </li>
   </ul>
 </div>
 
 <div id="input-box" *ngIf="this.chatContextService.storedOpenedChatId.value">
-  <!-- https://blog.angular-university.io/angular-file-upload/ -->
+  <!-- https://blog.angular-university.io/angular-file-upload/ the button below is non-clickable, then a click is simulated when user clicks on our stylised button -->
   <input type="file" class="file-input" style="display: none;" (change)="this.sendImage($event)" #fileUpload>
   <button class="input-box-button" (click)="fileUpload.click()">
     <mat-icon>attach_file</mat-icon>

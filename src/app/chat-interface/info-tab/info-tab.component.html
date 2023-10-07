@@ -1,7 +1,7 @@
 <!-- all info will be mushed and gravitated to the center, separated only by empty space -->
 <div id="info-root">
   <div id="server-info" *ngIf="this.chatContextService.storedOpenedChatId.value">
-    <img *ngIf="renderServerImage" src="{{(this.chatContextService.storedOpenChat | async)?.pfpSourceUrl}}" alt="This server's picture" id="server-pfp">
+    <img src="{{(this.chatContextService.storedOpenChat | async)?.pfpSourceUrl}}" alt="" id="server-pfp">
     <div id="info-action-buttons">
       <!-- These buttons will be dynamic tiles, they will have a fixed width background and unlimited heights to use -->
       <button mat-flat-button (click)="startVoiceCall()">Start Call</button>

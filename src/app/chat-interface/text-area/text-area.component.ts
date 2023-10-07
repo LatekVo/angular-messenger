@@ -1,11 +1,8 @@
 import { Component, OnInit, ApplicationRef, NgZone } from '@angular/core';
 import { MessageModel } from "../../shared/models/messageModel";
 import { HttpClient } from "@angular/common/http";
-import { UserContextService } from "../../shared/services/user-context.service";
 import { ChatContextService } from "../../shared/services/chat-context.service";
 import { PopupHandlerService } from "../../shared/services/popup-handler.service";
-import {ApiHandlerService} from "../../shared/services/api-handler.service";
-import {FileChangeEvent} from "@angular/compiler-cli/src/perform_watch";
 
 
 // todo: move all network components to a separate 'API interaction' service
@@ -41,6 +38,24 @@ export class TextAreaComponent implements OnInit {
   }
 
   messageInput: string = "";
+  extractUrl(content: string) {
+    // match for @image(XXX), match[1] contains URL captured by the (.*?) fragment
+    let match = content.match(/@image\((.*?)\)/);
+    if (match)
+      return match[1];
+    else
+      return null;
+  }
+
+  checkIsImage(content: string) {
+    // todo: if efficiency ever becomes a concern, simplyfy the line below to just check for @image (more fixes may be necessary)
+    return (this.extractUrl(content) !== null);
+  }
+
+  getImageUrl(content: string) {
+    // todo: add delay to this, or even better, only when referencing own image, as the img element is activated before the image is available to the server
+    return this.extractUrl(content);
+  }
 
   sendMessage() {
     this.http.post('/api/sendMessage', {content: this.messageInput, chatId: this.chatContextService.storedOpenedChatId.value}, {observe: "response"}).subscribe({

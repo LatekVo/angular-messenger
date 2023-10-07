@@ -5,7 +5,7 @@ import { HttpClient } from "@angular/common/http";
 import { InviteLinkModel } from "../../models/inviteLinkModel";
 
 @Component({
-  selector: 'app-invite-info',
+  selector: 'app-invite-info-dialog',
   templateUrl: './invite-info.component.html',
   styleUrls: ['./invite-info.component.css']
 })

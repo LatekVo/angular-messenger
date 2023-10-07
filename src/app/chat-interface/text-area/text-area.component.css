@@ -93,6 +93,13 @@
   color: black;
 }
 
+img.sender-content {
+  /* just to make sure users don't flood the chat with oversize images */
+  max-width: 50%;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
 #input-box {
   position: absolute;
   left: 0;

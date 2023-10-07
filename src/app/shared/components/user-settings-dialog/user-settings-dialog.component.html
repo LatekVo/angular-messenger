@@ -1,0 +1,30 @@
+<div id="user-settings-root">
+  <div class="grid-element" id="grid-element-settings">
+    <mat-list>
+      <!-- fill with entries of settings, put everything into a Form for easy handling -->
+    </mat-list>
+  </div>
+  <div class="grid-element" id="grid-element-picture">
+    <div id="profile-change-container">
+      <img src="{{this.userContextService.getCurrentProfilePicture()}}" alt="" id="grid-element-picture-bg-pic">
+      <input type="file" class="file-input" style="display: none;" (change)="this.setUserProfilePicture($event)" #fileUpload>
+      <button class="input-box-button" (click)="fileUpload.click()">
+        <mat-icon class="input-box-icon">attach_file</mat-icon>
+      </button>
+    </div>
+    <mat-list>
+      <mat-list-item>
+        Username: <span class="mono-text-container">{{'Placeholder'}}</span>
+      </mat-list-item>
+      <mat-list-item>
+        Last login: <span class="mono-text-container">{{'Placeholder'}}</span>
+      </mat-list-item>
+      <mat-list-item>
+        Login expiry: <span class="mono-text-container">{{'Placeholder'}}</span>
+      </mat-list-item>
+      <mat-list-item>
+        Date joined: <span class="mono-text-container">{{'Placeholder'}}</span>
+      </mat-list-item>
+    </mat-list>
+  </div>
+</div>

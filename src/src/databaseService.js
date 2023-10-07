@@ -1,6 +1,6 @@
 const path = require("path");
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'));
+const db = new sqlite3.Database(path.join(__dirname, 'database', 'database.sqlite'));
 
 // returns promise, so that these statements are more readable, and callback functions are be optional - replaced with .then()
 // it has to be noted, that db.run() and db.get() run asynchronously, detached from the main thread, and using async keyword is not an option

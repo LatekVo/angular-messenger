@@ -45,8 +45,6 @@ export class InfoTabComponent {
     this.updateInviteLinkList();
     this.updateChatMemberList();
   }
-
-  renderServerImage = true;
   reloadServerImage() {
     // todo: temporary solution, in future i want every server image to be hooked up to an interpolated value, which is also listening to server for changes
     this.chatContextService.updateCurrentChatImageUrl();
@@ -118,11 +116,12 @@ export class InfoTabComponent {
   }
 
   displayProfileDetails() {
-
+    // todo: placeholder, in future either just display the details or remove this functionality entirely
+    this.popupHandlerService.displayUserSettings();
   }
 
   displayProfileSettings() {
-
+    this.popupHandlerService.displayUserSettings();
   }
 
   logOut() {

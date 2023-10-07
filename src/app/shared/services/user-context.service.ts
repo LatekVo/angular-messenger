@@ -16,6 +16,12 @@ export class UserContextService {
   storedUserToken = new BehaviorSubject(localStorage.getItem(lsk.USER_TOKEN));
   storedUsername = new BehaviorSubject('');
 
+  getCurrentProfilePicture() {
+    // todo: changes a public variable and isn't used anywhere externally, only in the scope of this service.
+    //  ^^^ this will ensure responsiveness wherever said variable is referenced
+    return `${this.storedUserId.value}.png?antiCache=${new Date().toString()}`;
+  }
+
   // todo: if i ever end up writing more utility functions like this, i will move them all to a separate httpWorkerService, which will directly interface with apiCalls.js file
   updateUsername(userId: string) {
     this.http.post<{ username: string }>('/api/getUsername', {id: userId}).subscribe((res) => {

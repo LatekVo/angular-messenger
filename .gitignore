@@ -40,7 +40,7 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
-/src/src/database.sqlite
+/src/src/database/database.sqlite
 package-lock.json
 
 # static is essential but it's contents are private. It's a flat file containing every image associated with a hash

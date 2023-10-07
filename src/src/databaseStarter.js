@@ -1,8 +1,8 @@
 const path = require("path");
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'));
+const db = new sqlite3.Database(path.join(__dirname, 'database', 'database.sqlite'));
 
-console.log('database folder: ', __dirname)
+console.log('database folder: ', __dirname + '/database/')
 
 const dbErrorCallback = (err, output) => {
   if (err) {

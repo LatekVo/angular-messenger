@@ -1,0 +1,69 @@
+#user-settings-root {
+  /* note: grid breaks angular dialog box */
+  position: relative;
+  display: flex;
+  flex-direction: row;
+
+  overflow: hidden;
+  width: 50vh;
+  height: 50vh;
+
+  background-color: var(--basecolor);
+  padding: 4px;
+
+  --edge-distance: 8px;
+}
+
+#grid-element-settings {
+  position: relative;
+  width: 50%;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+#grid-element-picture {
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#profile-change-container {
+  position: relative;
+}
+
+#grid-element-picture-bg-pic {
+  width: 100%;
+  aspect-ratio: 1/1;
+}
+
+.input-box-button {
+  /* overlapping element, thus forced absolute positioning */
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(181, 181, 181, 0.7);
+  left: 0;
+  padding: 0;
+}
+
+.input-box-icon {
+  font-size: 30px;
+  width: 30px;
+  height: 30px;
+}
+
+mat-list-item {
+  background-color: var(--basecolor-dark);
+  margin: 4px 0;
+}
+
+.mono-text-container {
+  font-family: monospace;
+  color: black;
+  background-color: white;
+  padding: 4px 8px;
+  width: fit-content;
+  margin-left: 4px;
+  border-radius: 4px;
+}

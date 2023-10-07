@@ -3,8 +3,9 @@ import { HttpResponse } from "@angular/common/http";
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { NotificationSnackBarComponent } from "../components/notification-snack-bar/notification-snack-bar.component";
 import { MatDialog } from '@angular/material/dialog';
-import { InviteInfoComponent } from "../components/invite-info/invite-info.component";
-import {InviteLinkModel} from "../models/inviteLinkModel";
+import { InviteInfoComponent } from "../components/invite-info-dialog/invite-info.component";
+import { UserSettingsDialogComponent } from "../components/user-settings-dialog/user-settings-dialog.component";
+import { InviteLinkModel } from "../models/inviteLinkModel";
 
 @Injectable({
   providedIn: 'root'
@@ -44,5 +45,9 @@ export class PopupHandlerService {
         data: { invite: invite }
       });
     }
+  }
+
+  displayUserSettings() {
+    this.dialog.open(UserSettingsDialogComponent);
   }
 }
