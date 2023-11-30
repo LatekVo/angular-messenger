@@ -15,7 +15,7 @@ const path = require("path");
 
 const PAGE_URL = 'localhost:3000';
 
-let hashCost = 12; // todo: this value can be changed without harming anything, but should get tuned for ~150ms per hash comparison
+const hashCost = 12; // todo: this value can be changed without harming anything, but should get tuned for ~150ms per hash comparison
 
 // note: it's a little misleading, in Promise, onRejection actually means onError, when a rejection is caught, the onRejection cb will not be executed at all.
 
@@ -40,8 +40,8 @@ function newSqlDate() {
 // every route in here to be addressed by /api/___
 
 router.post('/login', (req, res) => {
-  let usernameOrEmail = req.body['username'],
-      password = req.body['password'];
+  const usernameOrEmail = req.body['username'];
+  const password = req.body['password'];
 
   dbs.getRecord(dbs.USERS_TABLE, ['password', 'id'], `username='${usernameOrEmail}' OR email='${usernameOrEmail}'`).then(output => {
     if (!output) {
@@ -50,23 +50,21 @@ router.post('/login', (req, res) => {
       return;
     }
 
-    let storedPasswordHash = output.password;
-    let storedUserId = output.id;
+    const storedPasswordHash = output.password;
+    const storedUserId = output.id;
 
-    let isEqual = bcrypt.compareSync(password, storedPasswordHash);
-
-    if (isEqual) {
+    if (bcrypt.compareSync(password, storedPasswordHash)) {
       // make sure the record has been deleted, then proceed with creating the new one
       dbs.deleteRecord(dbs.AUTH_TABLE, `userId='${storedUserId}'`).then(() => {
-        let tokenHash = hashGen() + hashGen(),
-          tokenUserId = storedUserId,
-          tokenExpiryDate = new Date();
+        const tokenHash = hashGen() + hashGen();
+        const tokenUserId = storedUserId;
+        const tokenExpiryDate = new Date();
 
         tokenExpiryDate.setDate(tokenExpiryDate.getDate()+31); // set the expiry as 1 month into the future
 
-        let tokenExpiryDateString = dateToString(tokenExpiryDate);
+        const tokenExpiryDateString = dateToString(tokenExpiryDate);
 
-        let tokenInsertionQuery = {
+        const tokenInsertionQuery = {
           userId: tokenUserId,
           token: tokenHash,
           expiry: tokenExpiryDateString
@@ -90,15 +88,15 @@ router.post('/login', (req, res) => {
 });
 
 router.post('/register', (req, res) => {
-  let email = req.body['email'],
-      username = req.body['username'],
-      password = req.body['password'];
+  const email = req.body['email'];
+  const username = req.body['username'];
+  const password = req.body['password'];
 
   // todo: add verification etc, we don't want people spamming empty accounts
-  let saltHash = bcrypt.genSaltSync(12);
-  let passwordHash = bcrypt.hashSync(password, saltHash);
+  const saltHash = bcrypt.genSaltSync(12);
+  const passwordHash = bcrypt.hashSync(password, saltHash);
 
-  let insertQuery = {
+  const insertQuery = {
     email: email,
     username: username,
     password: passwordHash
@@ -113,13 +111,13 @@ router.post('/register', (req, res) => {
 // this is a wrapper function for all this, it does all the verification
 function verifyRequest(req, res, requiredValues = []) {
   return new Promise((accept, reject) => {
-    let respondUnauthorized = () => {
+    const respondUnauthorized = () => {
       res.writeHead(401, 'Token invalid or expired');
       res.end();
       reject('Rejected unauthorized token');
     }
 
-    let sanitize = (input) => {
+    const sanitize = (input) => {
       // https://stackoverflow.com/questions/2794137/sanitizing-user-input-before-adding-it-to-the-dom-in-javascript
       const map = {
         //'&': '&amp;',
@@ -139,7 +137,7 @@ function verifyRequest(req, res, requiredValues = []) {
     let allValuesPresent = true;
     let allValuesAllowed = true;
 
-    let sanitizeEntity = (object) => {
+    const sanitizeEntity = (object) => {
       if (typeof object == "object") {
         Object.values(object).forEach(val => {
           val = sanitizeEntity(val);
@@ -152,16 +150,15 @@ function verifyRequest(req, res, requiredValues = []) {
     }
 
     requiredValues.forEach((key) => {
-      let value = JSON.stringify(req.body[key]);
+      const value = JSON.stringify(req.body[key]);
       if (value === undefined && value !== '') {
-
         allValuesPresent = false;
       } else {
         req.body[key] = sanitizeEntity(req.body[key]);
       }
     });
 
-    let incomingToken = req.cookies['userToken'];
+    const incomingToken = req.cookies['userToken'];
     if (incomingToken) {
       if (allValuesPresent && allValuesAllowed) {
         dbs.getRecord(dbs.AUTH_TABLE, ['userId', 'expiry'], `token='${incomingToken}'`).then(output => {
@@ -200,11 +197,11 @@ router.post('/validateSession', (req, res) => {
 // right now it's not as bad anymore, as there will be as many open connections at most as there are users. (earlier, it could go to infinity)
 // TODO: This can be probably actually moved to the SQLITE database, using a type called BLOB, it stores data in it's raw format
 // Map< Map< response > >
-let messageBroadcastingSockets = new Map();
+const messageBroadcastingSockets = new Map();
 
 function addListenerSocket(chatId, userId, responseObject) {
   // .get() refers to the Array object, instead of copying it
-  let listenerMap = messageBroadcastingSockets.get(chatId);
+  const listenerMap = messageBroadcastingSockets.get(chatId);
 
   if (!listenerMap) {
     messageBroadcastingSockets.set(chatId, new Map([[userId, responseObject]]));
@@ -213,7 +210,7 @@ function addListenerSocket(chatId, userId, responseObject) {
   }
 }
 function broadcastMessage(chatId, messageObject) {
-  let socketList = messageBroadcastingSockets.get(chatId);
+  const socketList = messageBroadcastingSockets.get(chatId);
   // debug: this part is verified to be working, the problem is probably with the headers
   if (socketList) {
     socketList.forEach(res => {
@@ -226,14 +223,14 @@ function broadcastMessage(chatId, messageObject) {
 
 router.post('/sendMessage', (req, res) => {
   verifyRequest(req, res, ['content', 'chatId']).then(userId => {
-    let messageContent = req.body['content'];
-    let messageChatId = req.body['chatId'];
+    const messageContent = req.body['content'];
+    const messageChatId = req.body['chatId'];
 
     // todo: add permissions as a separate database table: {chatId: string, userId: string, permissionId: string}
     dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `chatId='${messageChatId}' AND userId='${userId}'`).then(output => {
       // check if the user is a member of requested chat
       if (output?.id) {
-        let messageInsertionQuery = {
+        const messageInsertionQuery = {
           dateCreated: newSqlDate(),
           senderId: userId,
           chatId: messageChatId,
@@ -241,12 +238,12 @@ router.post('/sendMessage', (req, res) => {
         };
 
         dbs.insertRecord(dbs.MESSAGES_TABLE, messageInsertionQuery).then(messageId => {
-          let broadCastedMessage = {
+          const broadCastedMessage = {
             id: messageId,
             dateCreated: newSqlDate(), // more readable for now
             senderId: userId,
             content: messageContent
-          }
+          };
           broadcastMessage(messageChatId, broadCastedMessage);
           // no res.end(), that would interfere with broadcastMessage
         });
@@ -269,8 +266,8 @@ router.post('/sendImage', upload.fields([{name: 'image', maxCount: 1}, {name: 'c
   verifyRequest(req, res, ['chatId']).then(userId => {
     // console.log(req.body); // returns { chatId: string}
     // console.log(req.files); // returns { image: imageJson }
-    let imageContent = req.files['image'][0];
-    let messageChatId = req.body['chatId'];
+    const imageContent = req.files['image'][0];
+    const messageChatId = req.body['chatId'];
 
     dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `chatId='${messageChatId}' AND userId='${userId}'`).then(output => {
       // check if the user is a member of requested chat && size < 10MB
@@ -278,17 +275,17 @@ router.post('/sendImage', upload.fields([{name: 'image', maxCount: 1}, {name: 'c
         // rare case, we generate the id here, for better safety we could send the image first and THEN edit it with the appropriate content,
         // but for now this is sufficient.
         // todo: this response protocol has a lot of unfinished security, and has to be patched up asap before lauching any production builds.
-        let imageId = Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join(''); // copied from databaseService.js
+        const imageId = Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join(''); // copied from databaseService.js
         // img fields: { fieldname: 'image', originalname: string, encoding: 'Xbit', mimetype: 'image/XXX', buffer: Buffer, size: Number }
         // todo: out of these ^^^, we want to check mimetype and size
         // save the image
         verifyImage(imageContent).then((fileExtension) => {
-          let fileHandle = fs.openSync(path.join(__dirname, '..', 'static', `${imageId}.${fileExtension}`), 'w', 0o660);
+          const fileHandle = fs.openSync(path.join(__dirname, '..', 'static', `${imageId}.${fileExtension}`), 'w', 0o660);
           fs.writeSync(fileHandle, imageContent['buffer']);
           fs.closeSync(fileHandle);
         }, () => {});
 
-        let messageInsertionQuery = {
+        const messageInsertionQuery = {
           // todo: change .png into an autodetected type: jpg jpeg or png
           // IT LOOKS SIMPLE TO JUST REPLACE [] WITH <> BUT THAT WOULD ENABLE HARD TO PATCH XSS INJECTION, angular handles this well by itself as long as we don't manually force the html into the DOM
           // instead, we will look for @image() and place what's inside into a carefully injected <img> tag. No user input will get injected,
@@ -300,17 +297,17 @@ router.post('/sendImage', upload.fields([{name: 'image', maxCount: 1}, {name: 'c
           content: `@image(${imageId}.png)`
         };
         dbs.insertRecord(dbs.MESSAGES_TABLE, messageInsertionQuery).then(messageId => {
-          let broadCastedMessage = {
+          const broadCastedMessage = {
             id: messageId,
             dateCreated: newSqlDate(), // more readable for now
             senderId: userId,
             content: `@image(${imageId}.png)`
-          }
+          };
           broadcastMessage(messageChatId, broadCastedMessage);
           // no res.end(), that would interfere with broadcastMessage
         });
       } else {
-        res.writeHead(401, 'File size is too large'); // most likely error
+        res.writeHead(401, 'File size is too large'); // fixme: currently returning the most likely error, but it may be false
         res.end();
       }
     });
@@ -320,9 +317,9 @@ router.post('/sendImage', upload.fields([{name: 'image', maxCount: 1}, {name: 'c
 router.post('/setUserImage', upload.fields([{name: 'image', maxCount: 1}]), (req, res) => {
   // image is not required as it's not a part of the body object. DO NOT FIX!
   verifyRequest(req, res).then(userId => {
-    let imageContent = req.files['image'][0];
+    const imageContent = req.files['image'][0];
     verifyImage(imageContent).then((fileExtension) => {
-      let fileHandle = fs.openSync(path.join(__dirname, '..', 'static', `${userId}.${fileExtension}`), 'w', 0o660);
+      const fileHandle = fs.openSync(path.join(__dirname, '..', 'static', `${userId}.${fileExtension}`), 'w', 0o660);
       fs.writeSync(fileHandle, imageContent['buffer']);
       fs.closeSync(fileHandle);
       res.send();
@@ -337,10 +334,10 @@ router.post('/setServerImage', upload.fields([{name: 'image', maxCount: 1}, {nam
   // image is not required as it's not a part of the body object. DO NOT FIX!
   verifyRequest(req, res, ['chatId']).then(userId => {
     // todo: validate permissions
-    let imageContent = req.files['image'][0];
-    let chatId = req.body['chatId'];
+    const imageContent = req.files['image'][0];
+    const chatId = req.body['chatId'];
     verifyImage(imageContent).then((fileExtension) => {
-      let fileHandle = fs.openSync(path.join(__dirname, '..', 'static', `${chatId}.${fileExtension}`), 'w', 0o660);
+      const fileHandle = fs.openSync(path.join(__dirname, '..', 'static', `${chatId}.${fileExtension}`), 'w', 0o660);
       fs.writeSync(fileHandle, imageContent['buffer']);
       fs.closeSync(fileHandle);
       res.send();
@@ -354,13 +351,13 @@ router.post('/setServerImage', upload.fields([{name: 'image', maxCount: 1}, {nam
 
 router.post('/fetchMessages', (req, res) => {
   verifyRequest(req, res, ['chatId', 'pagination']).then(userId => {
-    let chatId = req.body['chatId'];
-    let pagination = req.body['pagination'];
+    const chatId = req.body['chatId'];
+    const pagination = req.body['pagination'];
 
-    let batchAmount = pagination.batchAmount;
-    let batchIndex = pagination.batchIndex;
-    let recordFrom = batchAmount * batchIndex;
-    let recordTo = recordFrom + batchAmount;
+    const batchAmount = pagination.batchAmount;
+    const batchIndex = pagination.batchIndex;
+    const recordFrom = batchAmount * batchIndex;
+    const recordTo = recordFrom + batchAmount;
 
     // TODO: put all these string keywords into an enum
 
@@ -380,14 +377,14 @@ router.post('/fetchMessages', (req, res) => {
 
 router.get('/streamMessages', (req, res) => {
   verifyRequest(req, res).then(userId => {
-    let chatId = req.cookies['chatId']; // note: contained in cookie, should work the same but stay vigilant about this
+    const chatId = req.cookies['chatId']; // note: contained in cookie, should work the same but stay vigilant about this
 
     // streaming headers
     res.setHeader('Content-Type', 'text/event-stream'); // necessary for EventSource API
     res.setHeader('Transfer-Encoding', 'chunked');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-    res.writeHead(200)
+    res.writeHead(200);
 
     // console.log('registering a listening client:', chatId, userId);
     addListenerSocket(chatId, userId, res);
@@ -395,7 +392,7 @@ router.get('/streamMessages', (req, res) => {
 });
 router.post('/getChatName', (req, res) => {
   verifyRequest(req, res, ['chatId']).then(userId => {
-    let checkedId = req.body['chatId'];
+    const checkedId = req.body['chatId'];
     if (checkedId) {
       dbs.getRecord(dbs.CHATS_TABLE, ['chatName'], `id='${checkedId}'`).then((output) => {
         if (output?.chatName) {
@@ -419,8 +416,7 @@ router.post('/fetchChats', (req, res) => {
   verifyRequest(req, res).then(userId => {
     dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['chatId'], `userId='${userId}'`, 500).then(output => {
       if (output) {
-        let rawIdArray = output.map(element => element.chatId);
-
+        const rawIdArray = output.map(element => element.chatId);
         // chats: Array
         res.send({chats: rawIdArray});
       } else {
@@ -434,27 +430,27 @@ router.post('/fetchChats', (req, res) => {
 // TODO: secondly, there has to be general verification going into every input user provides, i suggest purification at the verifyRequest, check 'DOM purify', or something along these lines
 router.post('/createChat', (req, res) => {
   verifyRequest(req, res, ['chatName']).then(userId => {
-    let currentDate = newSqlDate();
-    let chatName = req.body['chatName'].match(/[A-Za-z ]/g)?.join('');
+    const currentDate = newSqlDate();
+    const chatName = req.body['chatName'].match(/[A-Za-z ]/g)?.join('');
 
     // this is an exception, and will not be fixed inside verifyRequest
     // a user could use a string matched by .match() but not by DOMPurify, that's normal (example: ')
     if (chatName) {
       // add chat and add self
-      let chatInsertion = {
+      const chatInsertion = {
         chatName: chatName,
         isPublic: 1, // default 1 meaning anyone can join provided he has an invitation link
         dateCreated: currentDate,
         ownerId: userId,
         isFriendChat: 0,
         friendLinkId: 'NULL',
-      }
+      };
       dbs.insertRecord(dbs.CHATS_TABLE, chatInsertion).then(chatId => {
-        let chatLinkInsertion = {
+        const chatLinkInsertion = {
           dateJoined: currentDate,
           userId: userId,
           chatId: chatId,
-        }
+        };
         dbs.insertRecord(dbs.CHAT_LINKS_TABLE, chatLinkInsertion).then(output => {
           // chatId: string
           res.send({chatId: chatId});
@@ -474,16 +470,16 @@ router.post('/createChatInviteLink', (req, res) => {
   verifyRequest(req, res, ['chatId']).then(userId => {
     // 1. user must be on the server referenced
     // 2. todo: user must provide a role he is promoted to which allows him to create invites (this way the server only has to check if the information provided by the user is true, instead of parsing through every role related to the user)
-    let chatId = req.body['chatId'];
+    const chatId = req.body['chatId'];
     dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `chatId='${chatId}' AND userId='${userId}'`).then(output => {
       if (output?.id) {
         // todo: re-roll shortId if duplicate or offensive, for now SQLite will throw an error if anything.
-        let inviteInsertionQuery = {
+        const inviteInsertionQuery = {
           shortId: Array.from({ length: 5 }, () => Math.floor(Math.random() * 36).toString(36)).join(''),
           dateCreated: newSqlDate(),
           authorId: userId,
           chatId: chatId,
-        }
+        };
         // if the shortId is somehow duplicate, the error will be caught by now so no way to stop onFulfil's execution
         dbs.insertRecord(dbs.CHAT_INVITATION_LINKS_TABLE, inviteInsertionQuery).then((inviteId) => {
           // we are sending the whole thing, after the creation of a new server I want to see a popup,
@@ -501,26 +497,34 @@ router.post('/joinChat', (req, res) => {
     // todo: request sends a chat invitation link, not a chatId, fix asap
 
     // dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['chatId', 'isPublic']);
-    let shortId = req.body['shortId'];
+    const shortId = req.body['shortId'];
 
     // If chat is public, just add user, if private, check for an invitation
     // update: chats will be public by default, meaning with an invitation LINK you can just join,
     //         and special privacy option will need to be turned on for the chat to turn private: only individual invites
     dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['chatId'], `shortId='${shortId}'`).then(inviteOutput => {
       if (inviteOutput) {
-        let chatId = inviteOutput['chatId'];
+        const chatId = inviteOutput['chatId'];
         // console.log(`user: ${userId} joining: ${chatId} via ${shortId}`);
         dbs.getRecord(dbs.CHATS_TABLE, ['isPublic'], `id='${chatId}'`).then(chatOutput => {
           // todo: types may need fixing here, test it again when the system will be up
-          let finalizeInsertion = () => {
-            let chatMemberInsertion = {
-              dateJoined: newSqlDate(),
-              userId: userId,
-              chatId: chatId
-            }
-            dbs.insertRecord(dbs.CHAT_LINKS_TABLE, chatMemberInsertion).then(output => {
-              // chatId: string
-              res.send({chatId: chatId});
+          const finalizeInsertion = () => {
+            // before finalizing, make sure that the user isn't already present in said chat
+            dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['userId'], `userId='${userId}' AND chatId='${chatId}'`).then((presentRecord) => {
+              if (!presentRecord) {
+                const chatMemberInsertion = {
+                  dateJoined: newSqlDate(),
+                  userId: userId,
+                  chatId: chatId
+                };
+                dbs.insertRecord(dbs.CHAT_LINKS_TABLE, chatMemberInsertion).then(output => {
+                  // chatId: string
+                  res.send({chatId: chatId});
+                });
+              } else {
+                res.writeHead(301, 'You have already joined this server!');
+                res.end();
+              }
             });
           }
           if (chatOutput?.isPublic === 1) {
@@ -546,18 +550,18 @@ router.post('/inviteToChat', (req, res) => {
   // IMPORTANT NOTE: this API is intended only for inviting individual people.
   verifyRequest(req, res, ['chatId', 'invitedId']).then(userId => {
     // todo: for now, any member of a server can invite an user, when i add permissions support, only allow 'inviter' perms to invite users
-    let invitedId = req.body['invitedId'], // do not misread this: it's invitED, as in an invited person
-        chatId = req.body['chatId']
+    const invitedId = req.body['invitedId']; // do not misread this: it's invitED, as in an invited person
+    const chatId = req.body['chatId'];
 
     // check if user is a member of this server
     dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `userId='${userId}' AND chatId='${chatId}'`).then(output => {
       if (output) {
-        let invitationInsertion = {
+        const invitationInsertion = {
           dateCreated: newSqlDate(),
           authorId: userId,
           userId: invitedId,
           chatId: chatId
-        }
+        };
         dbs.insertRecord(dbs.CHAT_INVITATIONS_TABLE, invitationInsertion).then(output => {
           res.writeHead(200, 'Successfully invited user to this server!');
           res.end();
@@ -572,7 +576,7 @@ router.post('/inviteToChat', (req, res) => {
 
 router.post('/fetchChatInviteLinks', (req, res) => {
   verifyRequest(req, res, ['chatId']).then(userId => {
-    let chatId = req.body['chatId'];
+    const chatId = req.body['chatId'];
     dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['id', 'shortId'], `chatId='${chatId}'`, 20).then(output => {
       res.send({ inviteLinkList: output });
     });
@@ -581,11 +585,11 @@ router.post('/fetchChatInviteLinks', (req, res) => {
 
 router.post('/removeChatInviteLink', (req, res) => {
   verifyRequest(req, res, ['inviteId']).then(userId => {
-    let inviteId = req.body['inviteId'];
+    const inviteId = req.body['inviteId'];
     // check the chat of presented invite
     dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['id', 'chatId'], `id='${inviteId}'`).then(linkOutput => {
       if (linkOutput) {
-        let chatId = linkOutput.chatId;
+        const chatId = linkOutput.chatId;
         // check if user is present in said chat
         dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id'], `userId='${userId}' AND chatId='${chatId}'`).then(chatOutput => {
           if (chatOutput) {
@@ -608,16 +612,16 @@ router.post('/removeChatInviteLink', (req, res) => {
 
 router.post('/getInviteLinkDetails', (req, res) => {
   verifyRequest(req, res, ['inviteId']).then(userId => {
-    let inviteId = req.body['inviteId'];
+    const inviteId = req.body['inviteId'];
     dbs.getRecord(dbs.CHAT_INVITATION_LINKS_TABLE, ['id', 'shortId', 'dateCreated', 'authorId', 'chatId'], `id='${inviteId}'`).then((output) => {
-      res.send({invite: output})
+      res.send({invite: output});
     });
   }, () => {});
 });
 
 router.post('/fetchChatMembers', (req, res) => {
   verifyRequest(req, res, ['chatId']).then(userId => {
-    let chatId = req.body['chatId'];
+    const chatId = req.body['chatId'];
     dbs.getRecord(dbs.CHAT_LINKS_TABLE, ['id', 'userId'], `chatId='${chatId}'`, 200).then(output => {
       output.forEach((user) => {
         user.id = user.userId;
@@ -628,9 +632,25 @@ router.post('/fetchChatMembers', (req, res) => {
   }, () => {});
 });
 
-router.post('/', (req, res) => {
-  verifyRequest(req, res).then(userId => {
-
+router.post('/removeChatMember', (req, res) => {
+  verifyRequest(req, res, ['chatId', 'userId']).then(userId => {
+    const chatId = req.body['chatId'];
+    const subjectId = req.body['userId'];
+    console.log('removing user:', subjectId, 'on server:', chatId);
+    // todo: when this feature comes online, also remove any permissions given to the banned player,
+    //       while it could be written right now, there would be no way to test it and i don't realease untested features
+    if (userId === subjectId) {
+      res.writeHead(301, 'You cannot remove yourself from this chat!');
+      res.end();
+    } else {
+      dbs.deleteRecord(dbs.CHAT_LINKS_TABLE, `chatId='${chatId}' AND userId='${subjectId}'`).then(output => {
+        res.writeHead(200, 'Successfully removed user!');
+        res.end();
+      }).catch(err => {
+        res.writeHead(501, 'Could not remove this user.');
+        res.end();
+      });
+    }
   }, () => {});
 });
 
@@ -642,7 +662,7 @@ router.post('/', (req, res) => {
 
 router.post('/getUsername', (req, res) => {
   verifyRequest(req, res, ['id']).then(userId => {
-    let checkedId = req.body['id'];
+    const checkedId = req.body['id'];
     dbs.getRecord(dbs.USERS_TABLE, ['username'], `id='${checkedId}'`).then((output) => {
       if (output?.username) {
         // username: string
@@ -658,7 +678,7 @@ router.post('/getUsername', (req, res) => {
 // Friend status in future will grant some privileges, like allowing for private messages or adding to group without asking
 router.post('/fetchFriends', (req, res) => {
   verifyRequest(req, res).then(userId => {
-    let getFriendId = (outputObject) => {
+    const getFriendId = (outputObject) => {
       if (outputObject['userIdFirst'] === userId) {
         return outputObject['userIdSecond'];
       } else {
@@ -668,7 +688,7 @@ router.post('/fetchFriends', (req, res) => {
 
     // limit is arbitrary, add pagination
     dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['userIdFirst', 'userIdSecond'], `(userIdFirst='${userId}' OR userIdSecond='${userId}') AND isActive=1`, 500, 'dateCreated').then(output => {
-      let friendsList = [];
+      const friendsList = [];
       if (output) {
         output.forEach(x => {
           friendsList.push(getFriendId(x));
@@ -681,58 +701,95 @@ router.post('/fetchFriends', (req, res) => {
 });
 router.post('/addFriend', (req, res) => {
   verifyRequest(req, res, ['friendId']).then(userId => {
-    let friendId = req.body['friendId'];
-    let friendRequestInsertion = {
+    const friendId = req.body['friendId'];
+    const friendRequestInsertion = {
       dateCreated: newSqlDate(),
       userIdRequester: userId,
-      userIdRecipient: friendId,
-      isActive: 1
+      userIdRecipient: friendId
     };
+
+    // todo: make this obsolete by disabling adding self to friends on the client-side
+    if (userId === friendId) {
+      res.writeHead(301, 'Cannot invite yourself.');
+      res.end();
+      return;
+    }
+
+    const acceptInvite = () => {
+      // pending friend request accepted & deleted
+      dbs.deleteRecord(dbs.FRIEND_REQUESTS_TABLE, `userIdRequester='${friendId}' AND userIdRecipient='${userId}'`).then(x => {
+        res.writeHead(200, 'Friend added.');
+        res.end();
+      });
+    }
+
+    const sendInvite = () => {
+      // send a friend request
+      dbs.insertRecord(dbs.FRIEND_REQUESTS_TABLE, friendRequestInsertion).then(x => {
+        res.writeHead(200, 'Request sent.');
+        res.end();
+      });
+    }
+
+    const reactivateFriendship = () => {
+      const updateQuery = {
+        isActive: 1,
+      };
+      dbs.updateRecord(dbs.FRIEND_LINKS_TABLE, updateQuery, `(userIdFirst='${userId}' AND userIdSecond='${friendId}') OR (userIdFirst='${friendId}' AND userIdSecond='${userId}')`).then(output => {
+        res.writeHead(200, 'Friend added.');
+        res.end();
+      });
+    }
+
+    const rejectAlreadyAddedFriend = () => {
+      // friend link just exists already and is already active, invalid request
+      res.writeHead(300, 'Already added this friend!');
+      res.end();
+    }
+
+    const rejectAlreadySentRequest = () => {
+      // friend link just exists already and is already active, invalid request
+      res.writeHead(300, 'Request already sent!');
+      res.end();
+
+    }
 
     // check if the recipient already tried to add the requester as a friend
     dbs.getRecord(dbs.FRIEND_REQUESTS_TABLE, ['id'], `userIdRequester='${friendId}' AND userIdRecipient='${userId}'`).then(output => {
       if (output) {
-        // pending friend request accepted & deleted
-        dbs.deleteRecord(dbs.FRIEND_REQUESTS_TABLE, `userIdRequester='${friendId}' AND userIdRecipient='${userId}'`).then(x => {
-          res.writeHead(200, 'Friend added.');
-          res.end();
-        });
-      } else {
-        // make sure these aren't already friends
+        acceptInvite();
+        return;
+      }
+      // make sure the request isn't already sent - notice that this request is different from the one few lines above, and this is not a mistake
+      dbs.getRecord(dbs.FRIEND_REQUESTS_TABLE, ['id'], `userIdRequester='${userId}' AND userIdRecipient='${friendId}'`).then(exitingRequestRecord => {
+        if (exitingRequestRecord) {
+          rejectAlreadySentRequest();
+          return;
+        }
+        // make sure we aren't already friends
         dbs.getRecord(dbs.FRIEND_LINKS_TABLE, ['isActive'], `(userIdFirst='${userId}' AND userIdSecond='${friendId}') OR (userIdFirst='${friendId}' AND userIdSecond='${userId}')`).then(exitingFriendsRecord => {
           if (exitingFriendsRecord) {
             // reactivate the connection if not active yet
             if (String(exitingFriendsRecord.isActive) === '0') {
-              let updateQuery = {
-                isActive: 1,
-              }
-              dbs.updateRecord(dbs.FRIEND_LINKS_TABLE, updateQuery, `(userIdFirst='${userId}' AND userIdSecond='${friendId}') OR (userIdFirst='${friendId}' AND userIdSecond='${userId}')`).then(output => {
-                res.writeHead(200, 'Friend added.');
-                res.end();
-              });
+              reactivateFriendship();
             } else {
-              // friend link just exists already and is already active, invalid request
-              res.writeHead(300, 'Already added this friend!');
-              res.end();
+              rejectAlreadyAddedFriend();
             }
           } else {
-            // send a friend request
-            dbs.insertRecord(dbs.FRIEND_REQUESTS_TABLE, friendRequestInsertion).then(x => {
-              res.writeHead(200, 'Request sent.');
-              res.end();
-            });
+            sendInvite();
           }
         });
-      }
+      });
+
     });
   }, () => {});
 });
 router.post('/removeFriend', (req, res) => {
   verifyRequest(req, res, ['friendId']).then(userId => {
-    let friendId = req.body['friendId'];
-    let updateQuery = {
+    const friendId = req.body['friendId'];
+    const updateQuery = {
       isActive: 0,
-    }
+    };
     dbs.updateRecord(dbs.FRIEND_LINKS_TABLE, updateQuery, `(userIdFirst='${userId}' AND userIdSecond='${friendId}') OR (userIdFirst='${friendId}' AND userIdSecond='${userId}')`).then(output => {
       res.end();
     });

@@ -115,6 +115,28 @@ export class InfoTabComponent {
     this.popupHandlerService.displayInviteDetails(inviteId);
   }
 
+  sendFriendRequest(userId: string) {
+    this.http.post('/api/addFriend', {friendId: userId}, {observe: 'response'}).subscribe({
+      next: () => {
+        this.popupHandlerService.dispatch('Successfully sent a friend request!', "ok");
+      },
+      error: (err) => {
+        this.popupHandlerService.dispatchFromResponse(err);
+      }
+    });
+  }
+
+  removeFromServer(userId: string) {
+    this.http.post('/api/removeChatMember', {chatId: this.chatContextService.storedOpenedChatId.value, userId: userId}, {observe: 'response'}).subscribe({
+      next: () => {
+        this.updateChatMemberList();
+      },
+      error: (err) => {
+        this.popupHandlerService.dispatchFromResponse(err);
+      }
+    });
+  }
+
   displayProfileDetails() {
     // todo: placeholder, in future either just display the details or remove this functionality entirely
     this.popupHandlerService.displayUserSettings();

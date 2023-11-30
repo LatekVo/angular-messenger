@@ -11,7 +11,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* todo: overflow:scroll; but that doesn't work because of the mat-list, figure out something similar, perhaps paging on the mat-lists */
+  overflow: hidden;
+  /* todo: wrap the 2 lists in a separate div, and make it scrollable */
 }
 
 #server-info > * {
@@ -109,7 +110,7 @@ button {
   right: 0;
   height: auto;
   border-top: 10px solid var(--basecolor);
-
+  background: var(--basecolor-light);
 }
 
 #panel-wrap {
@@ -140,6 +141,29 @@ button {
   width: fit-content;
   margin-left: 4px;
   border-radius: 4px;
+}
+
+/* IMPORTANT: this styling should be remade into a global style for inline-buttons */
+.friend-list-button {
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  font-size: 28px !important;
+  width: 28px;
+  height: 28px;
+}
+
+.friend-list-button > .mat-icon {
+  font-size: 18px !important;
+  width: 18px;
+  height: 18px;
+}
+
+.green {
+  background-color: var(--infobox-ok);
+}
+
+.red {
+  background-color: var(--infobox-error);
 }
 
 #user-info-text-column-wrapper {

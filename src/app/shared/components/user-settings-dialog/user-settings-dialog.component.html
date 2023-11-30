@@ -14,11 +14,11 @@
     </div>
     <mat-list>
       <mat-list-item>
-        Username: <span class="mono-text-container">{{'Placeholder'}}</span>
+        Username: <span class="mono-text-container">{{ this.userContextService.storedUsername.value }}</span>
       </mat-list-item>
-      <mat-list-item>
+      <!--mat-list-item>
         Last login: <span class="mono-text-container">{{'Placeholder'}}</span>
-      </mat-list-item>
+      </mat-list-item-->
       <mat-list-item>
         Login expiry: <span class="mono-text-container">{{'Placeholder'}}</span>
       </mat-list-item>

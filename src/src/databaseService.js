@@ -68,6 +68,7 @@ module.exports = {
         if (err) {
           error(err);
         } else {
+          // on empty, null is returned by default
           if (returnsLimit === 1) {
             success(output?.[0]);
           } else {
